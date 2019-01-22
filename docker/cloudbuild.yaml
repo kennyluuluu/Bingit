@@ -4,23 +4,23 @@ steps:
   args:
   - '-c'
   - |
-    docker pull gcr.io/$PROJECT_ID/bingit-assignment-2:base || exit 0
+    docker pull gcr.io/bingit/bingit-assignment-2:base || exit 0
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build',
     '-f', 'docker/base.Dockerfile',
     '-t', 'bingit-assignment-2:base',
-    '-t', 'gcr.io/$PROJECT_ID/bingit-assignment-2:base',
-    '--cache-from', 'gcr.io/$PROJECT_ID/bingit-assignment-2:base',
+    '-t', 'gcr.io/bingit/bingit-assignment-2:base',
+    '--cache-from', 'gcr.io/bingit/bingit-assignment-2:base',
     '.'
   ]
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/bingit-assignment-2:base']
+  args: ['push', 'gcr.io/bingit/bingit-assignment-2:base']
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build',
     '-f', 'docker/Dockerfile',
-    '-t', 'gcr.io/$PROJECT_ID/bingit-assignment-2:latest',
+    '-t', 'gcr.io/bingit/bingit-assignment-2:latest',
     '.'
   ]
-images: ['gcr.io/$PROJECT_ID/bingit-assignment-2:base', 'gcr.io/$PROJECT_ID/bingit-assignment-2:latest']
+images: ['gcr.io/bingit/bingit-assignment-2:base', 'gcr.io/bingit/bingit-assignment-2:latest']
