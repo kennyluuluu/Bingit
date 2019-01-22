@@ -79,18 +79,28 @@ void session::handle_read(const boost::system::error_code &error,
 	    const char c = data_[i];
 	    i++;
 	    // valid syntax for request-line
-	    if (c == '\r\n' && HTTP_Version.size() > 0)
+	    if (c == '\r' && data_[i] == '\n' && HTTP_Version.size() > 0)
 	    {
-		// ECHO BACK REQUEST    
+                // send response
+                // generate status code and content type headers
+                std::string status_line = HTTP_Version + " 200 OK\r\n";
+                std::string content_type = "Content-Type: text/plain\r\n";
+                std::string status_and_content = status_line + content_type;
+
+                // attach request as body of response
+                char response[status_and_content.size() + bytes_transferred];
+                strncpy(response, status_and_content.c_str(), status_and_content.size());
+                strncpy(response + status_and_content.size(), data_, bytes_transferred);
+
+                // ECHO BACK RESPONSE (includes REQUEST)
 		boost::asio::async_write(socket_,
-                	                 boost::asio::buffer(data_, bytes_transferred),
+                	                 boost::asio::buffer(response, bytes_transferred + status_and_content.size()),
                         	         boost::bind(&session::handle_write, this,
                                            boost::asio::placeholders::error));
 		break;
 	    }
 	    HTTP_Version += c;
 	}
-	//fprintf(stderr, "HTTP_Version is %s", HTTP_Version.c_str()); DEBUG
     }
     else
     {
