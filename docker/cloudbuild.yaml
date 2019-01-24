@@ -23,4 +23,11 @@ steps:
     '-t', 'gcr.io/bingit/bingit-assignment-2:latest',
     '.'
   ]
-images: ['gcr.io/bingit/bingit-assignment-2:base', 'gcr.io/bingit/bingit-assignment-2:latest']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build',
+    '-f', 'docker/coverage.Dockerfile',
+    '-t', 'gcr.io/bingit/bingit-assignment-2:coverage',
+    '.'
+  ]
+images: ['gcr.io/bingit/bingit-assignment-2:base', 'gcr.io/bingit/bingit-assignment-2:latest', 'gcr.io/bingit/bingit-assignment-2:coverage']

@@ -1,30 +1,31 @@
-# ### Build/test container ###
+### Build/test container ###
 FROM bingit-assignment-2:base as builder
 
+# Copy directory to /usr/src/project
 COPY . /usr/src/project
+
+# Set build directory as current working directory
 WORKDIR /usr/src/project/build
 
+#build executable and run tests
 RUN cmake ..
 RUN make
 RUN ctest --output-on_failure
 
-
 ### Deploy container ###
 FROM ubuntu:latest as deploy
 
-# TODO(!): Copy server output binary to "."
+# Copy server output binary to "."
 COPY --from=builder /usr/src/project/build/bin/server .
 
 # Copy config files
 COPY configs/* conf/
 
-# TODO(!): Expose some port(s)
+# Expose some port(s)
 EXPOSE 80
 
 # Use ENTRYPOINT to specify the binary name
-# TODO(!): Update with real server name
 ENTRYPOINT ["./server"]
 
 # Use CMD to specify arguments to ENTRYPOINT
-# TODO(!): Update with real server args
 CMD ["/conf/my_config"]
