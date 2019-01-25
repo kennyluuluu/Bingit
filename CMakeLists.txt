@@ -34,23 +34,29 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 
 include_directories(include)
 
-# TODO(!): Update name and srcs
+# Add libraries
 add_library(server_lib src/server.cc src/session.cc)
 add_library(config_parser src/config_parser.cc)
 
-# TODO(!): Update executable name, srcs, and deps
+# Add executable and link libraries
 add_executable(server src/server_main.cc)
 target_link_libraries(server Boost::system server_lib config_parser)
 
-# TODO(!): Update test executable name, srcs, and deps
-# add_executable(example_lib_test tests/example_lib_test.cc)
-# target_link_libraries(example_lib_test example_lib gtest_main)
+# Add test executable and link libraries
 add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_test config_parser gtest_main)
 
-# TODO(!): Update with test binary
-gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_executable(server_test tests/server_test.cc)
+target_link_libraries(server_test server_lib gtest_main Boost::system server_lib)
 
-# TODO(!): Update with target/test targets
+add_executable(session_test tests/session_test.cc)
+target_link_libraries(session_test server_lib gtest_main Boost::system server_lib)
+
+# get gtest to work with our tests
+gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
+# generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS server config_parser TESTS config_parser_test)
+generate_coverage_report(TARGETS server config_parser TESTS config_parser_test server_test session_test)
