@@ -2,6 +2,8 @@
 
 using boost::asio::ip::tcp;
 
+bool parse_request_line(const char *request_line, size_t request_size);
+
 class session 
 {
   public:

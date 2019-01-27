@@ -53,7 +53,7 @@ bool check_http_version(std::string HTTP_version)
     return true;
 }
 
-bool parse_request_line(char *request_line, size_t request_size)
+bool parse_request_line(const char *request_line, size_t request_size)
 {
     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
     int iter = 0; // iterator for request_line
@@ -94,9 +94,11 @@ bool parse_request_line(char *request_line, size_t request_size)
         URI += c;
     }
 
-    while (iter < request_size)
+    while (1)
     {
-        const char c = request_line[iter];
+        if (iter >= request_size) // \r\n were never found
+	    return false;
+	const char c = request_line[iter];
         iter++;
         if (c == '\r' && request_line[iter] == '\n')
         {
