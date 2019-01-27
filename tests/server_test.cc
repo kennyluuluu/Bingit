@@ -19,6 +19,7 @@ class ServerTest : public ::testing::Test
     boost::asio::io_service *io_service_ptr = &io_service;
 };
 
+// Simple sanity check, io_service is not null and working
 TEST_F(ServerTest, SimpleWorkingTest)
 {
     server my_server(*io_service_ptr, port_num);

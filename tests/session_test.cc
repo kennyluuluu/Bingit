@@ -2,11 +2,22 @@
 #include "session.h"
 #include <string>
 
-TEST(SessionTest, CMakeTest)
+// TEST(SessionTest, CMakeTest)
+// {
+//     bool success = true;
+//     EXPECT_TRUE(success);
+// }
+
+class SessionTest : public ::testing::Test
 {
-    bool success = true;
-    EXPECT_TRUE(success);
-}
+  protected:
+    void SetUp() override
+    {
+    }
+
+    boost::asio::io_service io_service;
+    boost::asio::io_service *io_service_ptr = &io_service;
+};
 
 // Test to make sure basic RequestLine passes
 TEST(RequestLineParserTest, StandardTest)
@@ -74,3 +85,9 @@ TEST(RequestLineParserTest, MessageBodyTest)
     EXPECT_TRUE(success);
 }
 
+// Simple sanity test to check if the socket is valid
+TEST_F(SessionTest, SimpleWorkingTest)
+{
+    session my_session(*io_service_ptr);
+    EXPECT_NE(&my_session.socket(), nullptr);
+}
