@@ -35,12 +35,12 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 include_directories(include)
 
 # Add libraries
-add_library(server_lib src/server.cc src/session.cc)
+add_library(server_lib src/server.cc src/session.cc src/config_parser.cc)
 add_library(config_parser src/config_parser.cc)
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
-target_link_libraries(server Boost::system server_lib config_parser)
+target_link_libraries(server Boost::system server_lib)
 
 # Add test executable and link libraries
 add_executable(config_parser_test tests/config_parser_test.cc)
@@ -59,4 +59,4 @@ gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS server config_parser TESTS config_parser_test server_test session_test)
+generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test)
