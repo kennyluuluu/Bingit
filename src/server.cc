@@ -11,6 +11,7 @@
 //#include <cstdlib>
 //#include <iostream>
 #include <boost/bind.hpp>
+#include <stdlib.h>
 #include <string>
 #include "session.h"
 #include "server.h"
@@ -24,8 +25,8 @@ short int server::parse_port_number(const char *file)
 
     if (!success)
     {
-        std::cerr << "Invalid config provided: exiting with value of 1";
-        return -1;
+        std::cerr << "ERROR: Invalid config provided" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     std::string str_conf = config.ToString();
@@ -33,8 +34,8 @@ short int server::parse_port_number(const char *file)
 
     if (port_pos == std::string::npos)
     {
-        std::cerr << "No port number provided: exiting with value of 1";
-        return -1;
+        std::cerr << "ERROR: No port number provided" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     //adding 7 to ignore 'listen '
@@ -54,16 +55,20 @@ short int server::parse_port_number(const char *file)
 
     if (port_num.empty() || it != port_num.end())
     {
-        std::cerr << "Provided port number is empty or not a number: exiting with value of 1";
-        return 1;
+        std::cerr << "ERROR: Provided port number is empty or not a number" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     short a = atoi(port_num.c_str());
 
-    if (a <= 0) return -1;
+    if (a <= 0) 
+    {
+        std::cerr << "ERROR: Provided port number is <= 0, provided port: " << a << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
+    std::cout << "Starting server on port " << a << std::endl;
     return a;
-
 }
 
 server::server(boost::asio::io_service &io_service, const char *file_name)
