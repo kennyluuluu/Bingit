@@ -8,6 +8,10 @@ class server
 {
   public:
     server(boost::asio::io_service& io_service, const char *file_name);
+    ~server();
+    bool init();
+    tcp::acceptor* get_acceptor();
+    boost::asio::io_service& get_io_service();
 
   private:
     void start_accept();
@@ -15,6 +19,6 @@ class server
     void handle_accept(session* new_session, 
                         const boost::system::error_code& error);
     boost::asio::io_service& io_service_;
-    tcp::acceptor acceptor_;
+    tcp::acceptor *acceptor_;
 
 };

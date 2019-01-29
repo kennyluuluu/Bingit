@@ -12,10 +12,40 @@
 //#include <iostream>
 #include <boost/bind.hpp>
 #include <stdlib.h>
+#include <boost/asio.hpp>
 #include <string>
 #include "session.h"
 #include "server.h"
 #include "config_parser.h"
+
+server::server(boost::asio::io_service &io_service, const char *file_name)
+    : io_service_(io_service)
+{
+    short port_num = parse_port_number(file_name);
+    if(port_num == -1){
+        acceptor_ = nullptr;
+    }
+    else
+    {
+        using boost::asio::ip::tcp;
+        acceptor_ = new tcp::acceptor(io_service, tcp::endpoint(tcp::v4(), port_num));
+    }
+}
+
+bool server::init()
+{
+    if(acceptor_ != nullptr)
+    {
+        std::cout << "Initialized server..." << std::endl;
+        start_accept();
+        return true;
+    }
+    else
+    {
+        std::cout << "Failed to init server, acceptor is a nullptr" << std::endl;
+        return false;
+    }
+}
 
 short int server::parse_port_number(const char *file)
 {
@@ -26,7 +56,7 @@ short int server::parse_port_number(const char *file)
     if (!success)
     {
         std::cerr << "ERROR: Invalid config provided" << std::endl;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     std::string str_conf = config.ToString();
@@ -34,8 +64,8 @@ short int server::parse_port_number(const char *file)
 
     if (port_pos == std::string::npos)
     {
-        std::cerr << "ERROR: No port number provided" << std::endl;
-        exit(EXIT_FAILURE);
+        std::cerr << "ERROR: No 'listen' parameter present in config" << std::endl;
+        return -1;
     }
 
     //adding 7 to ignore 'listen '
@@ -56,32 +86,28 @@ short int server::parse_port_number(const char *file)
     if (port_num.empty() || it != port_num.end())
     {
         std::cerr << "ERROR: Provided port number is empty or not a number" << std::endl;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     short a = atoi(port_num.c_str());
 
-    if (a <= 0) 
+    //shouldn't happen bc the string parser above doesn't accept '-'
+    if (a <= 0)
     {
-        std::cerr << "ERROR: Provided port number is <= 0, provided port: " << a << std::endl;
-        exit(EXIT_FAILURE);
+        std::cerr << "ERROR: Provided port number is <= 0" << std::endl;
+        return -1;
     }
+
+    std::cout << "Server will be initialized on port " << a << "..." << std::endl;
 
     std::cout << "Starting server on port " << a << std::endl;
     return a;
 }
 
-server::server(boost::asio::io_service &io_service, const char *file_name)
-    : io_service_(io_service),
-      acceptor_(io_service, tcp::endpoint(tcp::v4(), server::parse_port_number(file_name)))
-{
-    start_accept();
-}
-
 void server::start_accept()
 {
     session *new_session = new session(io_service_);
-    acceptor_.async_accept(new_session->socket(),
+    acceptor_->async_accept(new_session->socket(),
                            boost::bind(&server::handle_accept, this, new_session,
                                        boost::asio::placeholders::error));
 }
@@ -99,4 +125,22 @@ void server::handle_accept(session *new_session,
     }
 
     start_accept();
+}
+
+tcp::acceptor* server::get_acceptor()
+{
+    return this->acceptor_;
+}
+
+boost::asio::io_service& server::get_io_service()
+{
+    return this->io_service_;
+}
+
+server::~server()
+{
+    if(acceptor_ != nullptr)
+    {
+        delete acceptor_;
+    }
 }

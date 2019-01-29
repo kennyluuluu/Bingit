@@ -10,33 +10,57 @@
 
 //#include <cstdlib>
 #include <iostream>
+#include <stdlib.h>
 #include <boost/bind.hpp>
 #include <string>
 #include "session.h"
 #include "server.h"
 #include "config_parser.h"
+#include <signal.h>
+#include <unistd.h>
+#include <cstring>
+#include <atomic>
+
+boost::asio::io_service io_serv;
+//handling ^C found here
+//https://stackoverflow.com/questions/4250013/is-destructor-called-if-sigint-or-sigstp-issued
+//and C++ documentation in sigaction
+void got_signal(int)
+{
+    std::cout << "\nReceived ^C, exiting normally" << std::endl;
+    io_serv.stop();
+}
 
 int main(int argc, char *argv[])
 {
+    struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
     try
     {
         if (argc != 2)
         {
-            std::cerr << "Usage: async_tcp_echo_server <config>\n";
+            std::cerr << "Usage: async_tcp_echo_server <config>" << std::endl;
             return 1;
         }
 
-
-        boost::asio::io_service io_service;
-
         using namespace std; // For atoi.
-        server s(io_service, argv[1]);
-
-        io_service.run();
+        server s(io_serv, argv[1]);
+        if(s.init())
+        {
+            io_serv.run();
+        }
+        else
+        {
+            exit(EXIT_FAILURE);
+        }
     }
     catch (std::exception &e)
     {
-        std::cerr << "Exception: " << e.what() << "\n";
+        std::cerr << "Exception: " << e.what() << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     return 0;
