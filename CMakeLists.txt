@@ -52,6 +52,13 @@ target_link_libraries(server_test server_lib gtest_main Boost::system server_lib
 add_executable(session_test tests/session_test.cc)
 target_link_libraries(session_test server_lib gtest_main Boost::system server_lib)
 
+# integration test
+# https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
+find_program(BASH_PROGRAM bash)
+if (BASH_PROGRAM)
+  add_test(integration_test ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/integration.sh)
+endif (BASH_PROGRAM)
+
 # get gtest to work with our tests
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
