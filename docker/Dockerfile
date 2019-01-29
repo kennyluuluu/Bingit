@@ -19,7 +19,7 @@ FROM ubuntu:latest as deploy
 COPY --from=builder /usr/src/project/build/bin/server .
 
 # Copy config files
-COPY configs/* conf/
+COPY configs/* configs/
 
 # Expose some port(s)
 EXPOSE 80
@@ -28,4 +28,4 @@ EXPOSE 80
 ENTRYPOINT ["./server"]
 
 # Use CMD to specify arguments to ENTRYPOINT
-CMD ["/conf/my_config"]
+CMD ["/configs/my_config"]
