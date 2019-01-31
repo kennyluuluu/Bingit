@@ -1,4 +1,4 @@
-//#include <iostream>
+#include <iostream>
 #include <boost/bind.hpp>
 #include "session.h"
 
@@ -119,6 +119,7 @@ void session::handle_read(const boost::system::error_code &error,
     {
         if (parse_request_line(data_, bytes_transferred))
         {
+            std::cout << "correct request" << std::endl;
             // send response
             // generate status code and content type headers
             std::string status_line = "HTTP/1.1 200 OK\r\n";
@@ -145,6 +146,15 @@ void session::handle_read(const boost::system::error_code &error,
         else
         {
             // TODO: handle bad request
+            std::cout << "incorrect request" << std::endl;
+            std::string status_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
+            char response[status_line.size()];
+            strncpy(response, status_line.c_str(), status_line.size());
+
+            boost::asio::async_write(socket_,
+                                    boost::asio::buffer(response, status_line.size()),
+                                    boost::bind(&session::handle_write, this,
+                                                boost::asio::placeholders::error));
         }
     }
     else
