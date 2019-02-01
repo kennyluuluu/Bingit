@@ -23,14 +23,14 @@ class SessionTest : public ::testing::Test
 TEST(RequestLineParserTest, StandardTest)
 {
     const char* StandardRequest = "GET / HTTP/1.1\r\n";
-    bool success = parse_request_line(StandardRequest, strlen(StandardRequest));
+    bool success = parse_request_line(StandardRequest, strlen(StandardRequest)).req_type;
     EXPECT_TRUE(success);
 }
 // Test should fail without a method
 TEST(RequestLineParserTest, MissingMethodTest)
 {
     const char* MissingMethod = " / HTTP/1.1\r\n";
-    bool success = parse_request_line(MissingMethod, strlen(MissingMethod));
+    bool success = parse_request_line(MissingMethod, strlen(MissingMethod)).req_type;
     EXPECT_FALSE(success);
 }
 
@@ -38,7 +38,7 @@ TEST(RequestLineParserTest, MissingMethodTest)
 TEST(RequestLineParserTest, UnknownMethodTest)
 {
     const char* UnknownMethod = "get / HTTP/1.1\r\n";
-    bool success = parse_request_line(UnknownMethod, strlen(UnknownMethod));
+    bool success = parse_request_line(UnknownMethod, strlen(UnknownMethod)).req_type;
     EXPECT_FALSE(success);
 }
 
@@ -46,7 +46,7 @@ TEST(RequestLineParserTest, UnknownMethodTest)
 TEST(RequestLineParserTest, MissingURITest)
 {
     const char* MissingURI = "GET  HTTP/1.1\r\n";
-    bool success = parse_request_line(MissingURI, strlen(MissingURI));
+    bool success = parse_request_line(MissingURI, strlen(MissingURI)).req_type;
     EXPECT_FALSE(success);
 }
 
@@ -55,8 +55,8 @@ TEST(RequestLineParserTest, SpacingTest)
 {
     const char* SpaceAfterVersion = "GET / HTTP/1.1 \r\n";
     const char* TooManySpaces = "GET  / HTTP/1.1\r\n";
-    bool success = parse_request_line(SpaceAfterVersion, strlen(SpaceAfterVersion));
-    bool success2 = parse_request_line(TooManySpaces, strlen(TooManySpaces));
+    bool success = parse_request_line(SpaceAfterVersion, strlen(SpaceAfterVersion)).req_type;
+    bool success2 = parse_request_line(TooManySpaces, strlen(TooManySpaces)).req_type;
     EXPECT_FALSE(success);
     EXPECT_FALSE(success2);
 }
@@ -65,7 +65,7 @@ TEST(RequestLineParserTest, SpacingTest)
 TEST(RequestLineParserTest, CarraigeReturnTest)
 {
     const char* MissingCR = "GET / HTTP/1.1\n";
-    bool success = parse_request_line(MissingCR, strlen(MissingCR));
+    bool success = parse_request_line(MissingCR, strlen(MissingCR)).req_type;
     EXPECT_FALSE(success);
 }
 
@@ -73,7 +73,7 @@ TEST(RequestLineParserTest, CarraigeReturnTest)
 TEST(RequestLineParserTest, VersionTest)
 {
     const char* IncorrectVersion = "GET / 1.1\r\n";
-    bool success = parse_request_line(IncorrectVersion, strlen(IncorrectVersion));
+    bool success = parse_request_line(IncorrectVersion, strlen(IncorrectVersion)).req_type;
     EXPECT_FALSE(success);
 }
 
@@ -81,7 +81,7 @@ TEST(RequestLineParserTest, VersionTest)
 TEST(RequestLineParserTest, MessageBodyTest)
 {
     const char* MessageBody = "GET / HTTP/1.1\r\nSomeMessage";
-    bool success = parse_request_line(MessageBody, strlen(MessageBody));
+    bool success = parse_request_line(MessageBody, strlen(MessageBody)).req_type;
     EXPECT_TRUE(success);
 }
 

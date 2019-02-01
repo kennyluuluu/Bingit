@@ -1,6 +1,8 @@
 #include <iostream>
 #include <boost/bind.hpp>
+#include <string>
 #include "session.h"
+#include "request_handler.h"
 
 session::session(boost::asio::io_service &io_service)
     : socket_(io_service)
@@ -20,7 +22,7 @@ void session::start()
                                         boost::asio::placeholders::bytes_transferred));
 }
 
-bool check_http_version(std::string HTTP_version)
+bool validate_http_version(std::string HTTP_version)
 {
 
     // version must be longer than 5 characters e.g. 'HTTP/x.x'
@@ -48,18 +50,22 @@ bool check_http_version(std::string HTTP_version)
     }
 
     if (count != 1)
-        return false; // only 1 decimal allowed in version
+    {
+        return false;
+    }
 
     return true;
 }
 
-bool parse_request_line(const char *request_line, size_t request_size)
+request parse_request_line(const char *request_line, size_t request_size)
 {
     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
     int iter = 0; // iterator for request_line
     std::string method = "";
-    std::string URI = "";
+    std::string path = "";
     std::string HTTP_version = "";
+    request::REQUEST_TYPE req_type = request::INVALID;
+    bool has_method = false;
 
     while (iter < request_size)
     {
@@ -69,10 +75,14 @@ bool parse_request_line(const char *request_line, size_t request_size)
         {
             if (method.compare("GET") == 0)
             {
+                has_method = true
                 break;
             }
             else
-                return false;
+            {
+                req_type = request::INVALID;
+                break;
+            }
         }
         method += c;
     }
@@ -83,22 +93,39 @@ bool parse_request_line(const char *request_line, size_t request_size)
         iter++;
         if (c == ' ')
         {
-            // parse URI format
-            if (URI.size() > 0)
+            if (path.size() > 0 && has_method)
             {
+                if (path.compare(0, 6, "/echo/") == 0)
+                {
+                    req_type = request::REPEAT;
+                }
+                else if (path.compare(0, 8, "/static/") == 0)
+                {
+                    req_type = request::FILE;
+                }
+                else
+                {
+                    req_type = request::INVALID;
+                }
                 break;
             }
             else
-                return false;
+            {
+                req_type = request::INVALID;
+                break;
+            }
         }
-        URI += c;
+        path += c;
     }
 
     while (1)
     {
         if (iter >= request_size) // \r\n were never found
-	    return false;
-	const char c = request_line[iter];
+        {
+            req_type = request::INVALID;
+            break;
+        }
+        const char c = request_line[iter];
         iter++;
         if (c == '\r' && request_line[iter] == '\n')
         {
@@ -107,9 +134,13 @@ bool parse_request_line(const char *request_line, size_t request_size)
         HTTP_version += c;
     }
 
-    return check_http_version(HTTP_version);
-
-    // no errors detected
+    //if the request is not already invalid, check if the HTTP version is valid
+    if (req_type != request::INVALID && !validate_http_version(HTTP_version))
+    {
+        req_type = request::INVALID;
+    }
+    request req = {method, path, HTTP_version, req_type};
+    return req;
 }
 
 void session::handle_read(const boost::system::error_code &error,
@@ -117,8 +148,13 @@ void session::handle_read(const boost::system::error_code &error,
 {
     if (!error)
     {
-        if (parse_request_line(data_, bytes_transferred))
+        request req;
+        req = parse_request_line(data_, bytes_transferred);
+
+        if (req.req_type == request::FILE || req.req_type == request::REPEAT)
         {
+            request_handler a(&socket_, req);
+
             std::cout << "correct request" << std::endl;
             // send response
             // generate status code and content type headers

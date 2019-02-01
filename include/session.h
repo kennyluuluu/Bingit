@@ -1,8 +1,8 @@
 #include <boost/asio.hpp>
+#include <string>
+#include "request.h"
 
 using boost::asio::ip::tcp;
-
-bool parse_request_line(const char *request_line, size_t request_size);
 
 class session 
 {
@@ -20,3 +20,6 @@ class session
     char data_[max_length];
 
 };
+
+bool validate_http_version(std::string HTTP_version);
+request parse_request_line(const char *request_line, size_t request_size);
