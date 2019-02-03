@@ -7,6 +7,7 @@ class request_handler
 {
   public:
     request_handler(boost::asio::ip::tcp::socket* socket, request req);
+    virtual void send_response() = 0;
 
   private:
     request request_;

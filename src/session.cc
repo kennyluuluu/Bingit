@@ -157,7 +157,7 @@ void session::handle_read(const boost::system::error_code &error,
 
         if (req.req_type == request::FILE || req.req_type == request::REPEAT)
         {
-            request_handler a(&socket_, req);
+            // request_handler a(&socket_, req);
 
             // std::cout << "correct request" << std::endl;
             BOOST_LOG_TRIVIAL(info) << "Correct request received from " << remote_ip;
