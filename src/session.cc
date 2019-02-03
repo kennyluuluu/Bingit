@@ -75,7 +75,7 @@ request parse_request_line(const char *request_line, size_t request_size)
         {
             if (method.compare("GET") == 0)
             {
-                has_method = true
+                has_method = true;
                 break;
             }
             else
@@ -93,13 +93,14 @@ request parse_request_line(const char *request_line, size_t request_size)
         iter++;
         if (c == ' ')
         {
-            if (path.size() > 0 && has_method)
+            if (path.size() > 0 && has_method == true)
             {
-                if (path.compare(0, 6, "/echo/") == 0)
+                if (path.compare(0, 5, "echo") == 0)
                 {
                     req_type = request::REPEAT;
                 }
-                else if (path.compare(0, 8, "/static/") == 0)
+                // TODO: add /static to all paths at some point in time
+                else if (path.compare(0, 8, "/") == 0)
                 {
                     req_type = request::FILE;
                 }
@@ -182,7 +183,8 @@ void session::handle_read(const boost::system::error_code &error,
         else
         {
             // TODO: handle bad request
-            std::cout << "incorrect request" << std::endl;
+            std::cout << "Invalid request received:" << std::endl;
+            std::cout << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << std::endl;
             std::string status_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
             char response[status_line.size()];
             strncpy(response, status_line.c_str(), status_line.size());

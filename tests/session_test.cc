@@ -20,12 +20,21 @@ class SessionTest : public ::testing::Test
 };
 
 // Test to make sure basic RequestLine passes
-TEST(RequestLineParserTest, StandardTest)
+TEST(RequestLineParserTest, StandardFileTest)
 {
     const char* StandardRequest = "GET / HTTP/1.1\r\n";
     bool success = parse_request_line(StandardRequest, strlen(StandardRequest)).req_type;
     EXPECT_TRUE(success);
 }
+
+// Test to make sure basic RequestLine passes
+TEST(RequestLineParserTest, StandardEchoTest)
+{
+    const char* StandardRequest = "GET echo HTTP/1.1\r\n";
+    bool success = parse_request_line(StandardRequest, strlen(StandardRequest)).req_type;
+    EXPECT_TRUE(success);
+}
+
 // Test should fail without a method
 TEST(RequestLineParserTest, MissingMethodTest)
 {
