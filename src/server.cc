@@ -11,16 +11,34 @@
 //#include <cstdlib>
 //#include <iostream>
 #include <boost/bind.hpp>
-#include <stdlib.h>
 #include <boost/asio.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/formatter_parser.hpp>
+
+#include <stdlib.h>
 #include <string>
 #include "session.h"
 #include "server.h"
 #include "config_parser.h"
 
+namespace logging = boost::log;
+// namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+
 server::server(boost::asio::io_service &io_service, const char *file_name)
     : io_service_(io_service)
 {
+    init_logging();
+
     short port_num = parse_port_number(file_name);
     if(port_num == -1){
         acceptor_ = nullptr;
@@ -32,17 +50,41 @@ server::server(boost::asio::io_service &io_service, const char *file_name)
     }
 }
 
+void server::init_logging()
+{
+    // exposes severity level attribute
+    logging::register_simple_formatter_factory<logging::trivial::severity_level, char>("Severity");
+    
+    // create logging file
+    logging::add_file_log(
+        keywords::file_name = "server_log_%N.log",
+        keywords::rotation_size = 10000000, // 10 MB 
+        keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), // Midnight
+        keywords::format = "[%TimeStamp%] [%ThreadID%] [%Severity%]: %Message%",
+        keywords::open_mode = std::ios_base::app
+    );
+
+    // enable console logging simulataneously 
+    logging::add_console_log(std::cout, boost::log::keywords::format = ">>[%TimeStamp%] [%ThreadID%] [%Severity%]: %Message%");
+
+    // enables time stamps correctly
+    boost::log::add_common_attributes();
+
+    BOOST_LOG_TRIVIAL(trace) << "Log file created";
+
+}
+
 bool server::init()
 {
     if(acceptor_ != nullptr)
     {
-        std::cout << "Initialized server..." << std::endl;
+        BOOST_LOG_TRIVIAL(info) << "Initialized server...";
         start_accept();
         return true;
     }
     else
     {
-        std::cout << "Failed to init server, acceptor is a nullptr" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Failed to init server, acceptor is a nullptr";
         return false;
     }
 }
@@ -55,7 +97,7 @@ short int server::parse_port_number(const char *file)
 
     if (!success)
     {
-        std::cerr << "ERROR: Invalid config provided" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Invalid config provided";
         return -1;
     }
 
@@ -64,7 +106,7 @@ short int server::parse_port_number(const char *file)
 
     if (port_pos == std::string::npos)
     {
-        std::cerr << "ERROR: No 'listen' parameter present in config" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "No 'listen' parameter present in config";
         return -1;
     }
 
@@ -85,7 +127,7 @@ short int server::parse_port_number(const char *file)
 
     if (port_num.empty() || it != port_num.end())
     {
-        std::cerr << "ERROR: Provided port number is empty or not a number" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Provided port number is empty or not a number";
         return -1;
     }
 
@@ -94,13 +136,13 @@ short int server::parse_port_number(const char *file)
     //shouldn't happen bc the string parser above doesn't accept '-'
     if (a <= 0)
     {
-        std::cerr << "ERROR: Provided port number is <= 0" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Provided port number is <- 0";
         return -1;
     }
 
-    std::cout << "Server will be initialized on port " << a << "..." << std::endl;
-
-    std::cout << "Starting server on port " << a << std::endl;
+    BOOST_LOG_TRIVIAL(trace) << "Config file parsed correctly";
+    BOOST_LOG_TRIVIAL(info) << "Server will be initialized on port " << a << "...";
+    BOOST_LOG_TRIVIAL(info) << "Starting server on port " << a;
     return a;
 }
 

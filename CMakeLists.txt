@@ -29,7 +29,7 @@ add_subdirectory(/usr/src/googletest googletest)
 # Enable Boost
 # Use static libraries so binaries can be deployed without a full boost install
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.50 REQUIRED COMPONENTS system)
+find_package(Boost 1.50 REQUIRED COMPONENTS system log_setup log date_time filesystem thread regex chrono atomic)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
 include_directories(include)
@@ -40,17 +40,17 @@ add_library(config_parser src/config_parser.cc)
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
-target_link_libraries(server Boost::system server_lib)
+target_link_libraries(server server_lib ${Boost_LIBRARIES})
 
 # Add test executable and link libraries
 add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_test config_parser gtest_main)
 
 add_executable(server_test tests/server_test.cc)
-target_link_libraries(server_test server_lib gtest_main Boost::system server_lib)
+target_link_libraries(server_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
 
 add_executable(session_test tests/session_test.cc)
-target_link_libraries(session_test server_lib gtest_main Boost::system server_lib)
+target_link_libraries(session_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
 
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake

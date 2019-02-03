@@ -9,6 +9,7 @@ class session
   public:
     session(boost::asio::io_service& io_service);
     tcp::socket& socket();
+    std::string get_remote_ip();
     void start();
 
   private:
@@ -18,7 +19,7 @@ class session
     tcp::socket socket_;
     enum { max_length = 1024 };
     char data_[max_length];
-
+    std::string remote_ip;
 };
 
 bool validate_http_version(std::string HTTP_version);

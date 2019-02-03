@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <boost/bind.hpp>
+#include <boost/log/trivial.hpp>
 #include <string>
 #include "session.h"
 #include "server.h"
@@ -27,7 +28,8 @@ boost::asio::io_service io_serv;
 //and C++ documentation in sigaction
 void got_signal(int)
 {
-    std::cout << "\nReceived ^C, exiting normally" << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Received ^C, exiting normally";
+    // std::cout << "\nReceived ^C, exiting normally" << std::endl;
     io_serv.stop();
 }
 
@@ -59,7 +61,8 @@ int main(int argc, char *argv[])
     }
     catch (std::exception &e)
     {
-        std::cerr << "Exception: " << e.what() << std::endl;
+        BOOST_LOG_TRIVIAL(info) << "Exception: " << e.what();
+        // std::cerr << "Exception: " << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 

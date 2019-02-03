@@ -1,6 +1,8 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <string>
+#include <boost/log/trivial.hpp>
+
 #include "session.h"
 #include "request_handler.h"
 
@@ -20,6 +22,7 @@ void session::start()
                             boost::bind(&session::handle_read, this,
                                         boost::asio::placeholders::error,
                                         boost::asio::placeholders::bytes_transferred));
+    remote_ip = get_remote_ip();   
 }
 
 bool validate_http_version(std::string HTTP_version)
@@ -156,7 +159,9 @@ void session::handle_read(const boost::system::error_code &error,
         {
             request_handler a(&socket_, req);
 
-            std::cout << "correct request" << std::endl;
+            // std::cout << "correct request" << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "Correct request received from " << remote_ip;
+
             // send response
             // generate status code and content type headers
             std::string status_line = "HTTP/1.1 200 OK\r\n";
@@ -183,8 +188,10 @@ void session::handle_read(const boost::system::error_code &error,
         else
         {
             // TODO: handle bad request
-            std::cout << "Invalid request received:" << std::endl;
+            // std::cout << "Invalid request received:" << std::endl;
             std::cout << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << std::endl;
+            // std::cout << "incorrect request" << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "Incorrect request received from " << remote_ip;
             std::string status_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
             char response[status_line.size()];
             strncpy(response, status_line.c_str(), status_line.size());
@@ -214,4 +221,12 @@ void session::handle_write(const boost::system::error_code &error)
     {
         delete this;
     }
+}
+
+std::string session::get_remote_ip()
+{
+    // https://stackoverflow.com/questions/601763/how-to-get-ip-address-of-boostasioiptcpsocket
+    boost::asio::ip::tcp::endpoint remote_ep = socket_.remote_endpoint();
+    boost::asio::ip::address remote_ad = remote_ep.address();
+    return remote_ad.to_string();
 }

@@ -10,5 +10,6 @@ RUN apt-get update && apt-get install -y \
     libboost-log-dev \
     libboost-signals-dev \
     libboost-system-dev \
+    libboost-regex-dev \
     libgtest-dev \
     gcovr

@@ -14,6 +14,7 @@ class server
     boost::asio::io_service& get_io_service();
 
   private:
+    void init_logging();
     void start_accept();
     short parse_port_number(const char *file_name);
     void handle_accept(session* new_session, 
