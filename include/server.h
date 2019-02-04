@@ -10,6 +10,7 @@ class server
     server(boost::asio::io_service& io_service, const char *file_name);
     ~server();
     bool init();
+    bool kill();
     tcp::acceptor* get_acceptor();
     boost::asio::io_service& get_io_service();
 

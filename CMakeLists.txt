@@ -52,6 +52,9 @@ target_link_libraries(server_test server_lib gtest_main server_lib ${Boost_LIBRA
 add_executable(session_test tests/session_test.cc)
 target_link_libraries(session_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
 
+add_executable(request_handler_test tests/request_handler_test.cc)
+target_link_libraries(request_handler_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
+
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
 find_program(BASH_PROGRAM bash)
@@ -66,4 +69,4 @@ gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test)
+generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test request_handler_test)

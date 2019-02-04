@@ -89,6 +89,21 @@ bool server::init()
     }
 }
 
+bool server::kill()
+{
+    if(acceptor_ != nullptr && &io_service_ != nullptr)
+    {
+        BOOST_LOG_TRIVIAL(info) << "Killed server...";
+        io_service_.stop();
+        return true;
+    }
+    else
+    {
+        BOOST_LOG_TRIVIAL(error) << "Failed to kill server, io_service is null";
+        return false;
+    }
+}
+
 short int server::parse_port_number(const char *file)
 {
     NginxConfigParser config_parser;
