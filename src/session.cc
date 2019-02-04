@@ -4,7 +4,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "session.h"
-#include "request_handler.h"
+#include "echo_request_handler.h"
 
 session::session(boost::asio::io_service &io_service)
     : socket_(io_service)
@@ -157,33 +157,23 @@ void session::handle_read(const boost::system::error_code &error,
 
         if (req.req_type == request::FILE || req.req_type == request::REPEAT)
         {
-            // request_handler a(&socket_, req);
-
-            // std::cout << "correct request" << std::endl;
             BOOST_LOG_TRIVIAL(info) << "Correct request received from " << remote_ip;
+            if (req.req_type == request::REPEAT)
+            {
+                // construct echo request handler to handle echo request
+                echo_request_handler a(&socket_, req);
+                std::string response = a.get_response(bytes_transferred, data_);
 
-            // send response
-            // generate status code and content type headers
-            std::string status_line = "HTTP/1.1 200 OK\r\n";
-            std::string headers = "Content-Type: text/plain\r\n";
-            headers += "Content-Length: " + std::to_string(bytes_transferred) + "\r\n";
-            // TODO: add more headers
+                // convert c++ response string into buffer
+                const char* response_buf = response.c_str();
+                size_t response_len = response.size();
 
-            //must have empty line after headers
-            headers += "\r\n";
-
-            std::string status_and_headers = status_line + headers;
-
-            // attach request as body of response
-            char response[status_and_headers.size() + bytes_transferred];
-            strncpy(response, status_and_headers.c_str(), status_and_headers.size());
-            strncpy(response + status_and_headers.size(), data_, bytes_transferred);
-
-            // ECHO BACK RESPONSE (includes REQUEST)
-            boost::asio::async_write(socket_,
-                                     boost::asio::buffer(response, bytes_transferred + status_and_headers.size()),
-                                     boost::bind(&session::handle_write, this,
-                                                 boost::asio::placeholders::error));
+                // ECHO BACK RESPONSE (includes REQUEST)
+                boost::asio::async_write(socket_,
+                                boost::asio::buffer(response_buf, response_len),
+                                boost::bind(&session::handle_write, this,
+                                            boost::asio::placeholders::error));
+            }
         }
         else
         {

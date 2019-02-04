@@ -8,3 +8,18 @@ request_handler::request_handler(boost::asio::ip::tcp::socket* socket, request r
 {
     
 }
+
+request_handler::~request_handler()
+{
+
+}
+
+tcp::socket* request_handler::get_socket()
+{
+    return this->socket_;
+}
+
+request request_handler::get_request()
+{
+    return this->request_;
+}
