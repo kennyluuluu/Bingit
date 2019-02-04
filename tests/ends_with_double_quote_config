@@ -7,3 +7,4 @@ server {
   root /home/ubuntu/sites/foo/;
   test 'this is a string';
 }
+"

@@ -67,3 +67,35 @@ TEST_F(NginxConfigParserTest, ExtraEndBraceConfig)
 
     EXPECT_FALSE(success);
 }
+
+//invalid config, ' at the end of a config
+TEST_F(NginxConfigParserTest, EndsWithSingleQuote)
+{
+    bool success = parser.Parse("ends_with_single_quote_config", &out_config);
+
+    EXPECT_FALSE(success);
+}
+
+//invalid config, " at the end of a config
+TEST_F(NginxConfigParserTest, EndsWithDoubleQuote)
+{
+    bool success = parser.Parse("ends_with_double_quote_config", &out_config);
+
+    EXPECT_FALSE(success);
+}
+
+//invalid config, { not on own line
+TEST_F(NginxConfigParserTest, DoubleOpenBracer)
+{
+    bool success = parser.Parse("open_bracer_not_on_own_line_config", &out_config);
+
+    EXPECT_FALSE(success);
+}
+
+//invalid config, config doesn't exist
+TEST_F(NginxConfigParserTest, InvalidConfig)
+{
+    bool success = parser.Parse("non_existent_config", &out_config);
+
+    EXPECT_FALSE(success);
+}
