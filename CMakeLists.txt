@@ -35,22 +35,23 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 include_directories(include)
 
 # Add libraries
-add_library(server_lib src/server.cc src/session.cc src/config_parser.cc src/request_handler.cc src/echo_request_handler.cc src/static_request_handler.cc)
+add_library(server_lib src/server.cc src/session.cc src/config_parser.cc)
 add_library(config_parser src/config_parser.cc)
+add_library(handler_lib src/request_handler.cc src/echo_request_handler.cc src/static_request_handler.cc)
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
-target_link_libraries(server server_lib ${Boost_LIBRARIES})
+target_link_libraries(server server_lib handler_lib ${Boost_LIBRARIES})
 
 # Add test executable and link libraries
 add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_test config_parser gtest_main)
 
 add_executable(server_test tests/server_test.cc)
-target_link_libraries(server_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
+target_link_libraries(server_test server_lib handler_lib gtest_main server_lib ${Boost_LIBRARIES})
 
 add_executable(session_test tests/session_test.cc)
-target_link_libraries(session_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
+target_link_libraries(session_test server_lib handler_lib gtest_main server_lib ${Boost_LIBRARIES})
 
 add_executable(request_handler_test tests/request_handler_test.cc)
 target_link_libraries(request_handler_test server_lib gtest_main server_lib ${Boost_LIBRARIES})

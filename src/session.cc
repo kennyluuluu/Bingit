@@ -5,6 +5,7 @@
 
 #include "session.h"
 #include "echo_request_handler.h"
+#include "static_request_handler.h"
 
 session::session(boost::asio::io_service &io_service)
     : socket_(io_service)
@@ -103,7 +104,7 @@ request parse_request_line(const char *request_line, size_t request_size)
                     req_type = request::REPEAT;
                 }
                 // TODO: add /static to all paths at some point in time
-                else if (path.compare(0, 8, "/") == 0)
+                else if (path.compare(0, 6, "static") == 0)
                 {
                     req_type = request::FILE;
                 }
@@ -173,6 +174,21 @@ void session::handle_read(const boost::system::error_code &error,
                                 boost::asio::buffer(response_buf, response_len),
                                 boost::bind(&session::handle_write, this,
                                             boost::asio::placeholders::error));
+            }
+            else {
+                static_request_handler a(&socket_, req);
+                std::string response = a.get_response(bytes_transferred, data_);
+
+                // convert c++ response string into buffer
+                const char* response_buf = response.c_str();
+                size_t response_len = response.size();
+
+                // ECHO BACK RESPONSE (includes REQUEST)
+                boost::asio::async_write(socket_,
+                                boost::asio::buffer(response_buf, response_len),
+                                boost::bind(&session::handle_write, this,
+                                            boost::asio::placeholders::error));
+
             }
         }
         else

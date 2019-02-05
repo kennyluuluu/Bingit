@@ -1,3 +1,6 @@
+#ifndef REQUEST_HANDLER_
+#define REQUEST_HANDLER_
+
 #include <boost/asio.hpp>
 #include "request.h"
 using boost::asio::ip::tcp;
@@ -16,3 +19,5 @@ class request_handler
     tcp::socket* socket_;
 
 };
+
+#endif
