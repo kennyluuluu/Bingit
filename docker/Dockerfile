@@ -9,7 +9,9 @@ WORKDIR /usr/src/project/build
 
 #build executable and run tests
 RUN cmake ..
+
 RUN make
+
 RUN ctest --output-on_failure
 
 ### Deploy container ###
@@ -20,6 +22,9 @@ COPY --from=builder /usr/src/project/build/bin/server .
 
 # Copy config files
 COPY configs/* configs/
+
+# Copy static folder and files
+COPY static/* static/
 
 # Expose some port(s)
 EXPOSE 80
