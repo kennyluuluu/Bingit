@@ -15,8 +15,10 @@ class request_handler
     request get_request();
 
   private:
-    request request_;
     tcp::socket* socket_;
+
+  protected:
+    request request_;
 
 };
 

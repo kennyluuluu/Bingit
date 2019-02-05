@@ -22,7 +22,7 @@ class SessionTest : public ::testing::Test
 // Test to make sure basic RequestLine passes
 TEST(RequestLineParserTest, StandardFileTest)
 {
-    const char* StandardRequest = "GET / HTTP/1.1\r\n";
+    const char* StandardRequest = "GET echo HTTP/1.1\r\n";
     bool success = parse_request_line(StandardRequest, strlen(StandardRequest)).req_type;
     EXPECT_TRUE(success);
 }
@@ -89,7 +89,7 @@ TEST(RequestLineParserTest, VersionTest)
 // Message body for GET requests should be ignored.
 TEST(RequestLineParserTest, MessageBodyTest)
 {
-    const char* MessageBody = "GET / HTTP/1.1\r\nSomeMessage";
+    const char* MessageBody = "GET echo HTTP/1.1\r\nSomeMessage";
     bool success = parse_request_line(MessageBody, strlen(MessageBody)).req_type;
     EXPECT_TRUE(success);
 }
