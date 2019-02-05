@@ -4,29 +4,53 @@
 ./bin/server ../configs/8080_config &
 id=$!
 
-expected=$'GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\n\r'
-
 # valid request test
+expected=$'<!DOCTYPE html><html><body><p>Welcome to the server.</p><p>Would you like to set Bing as your preferred search engine?</p></body></html>'
+
 generated_output=$(curl -sS localhost:8080)
 
 if [ "$expected" != "$generated_output" ]; 
 then
-    echo "Test Failed"
+    echo "Valid Request Test Failed"
     kill -s SIGINT $id
     exit 1
 fi
 
-expected=$'HTTP/1.1 400 Bad Request\r\n\r'
-expected=$(echo "$expected" | od -c)
-
 # invalid request test
-generated_output=$(echo -e 'GE / HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c) # | tr -d '\r')
+expected=$'HTTP/1.1 400 Bad Request\r\n\r'
+expected=$(echo -e "$expected" | od -c)
 
-# echo "$generated_output"
+generated_output=$(echo -e 'GE / HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
 
 if [ "$expected" != "$generated_output" ]; 
 then
-    echo "Test Failed"
+    echo "Invalid Request Test Failed"
+    kill -s SIGINT $id
+    exit 1
+fi
+
+# bad path test
+expected=$'404 Error: Page not found\r'
+expected=$(echo "$expected" | od -c)
+
+generated_output=$(curl -sS localhost:8080/non_existent_file | od -c)
+
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "Bad Path Test Failed"
+    kill -s SIGINT $id
+    exit 1
+fi
+
+# echo test
+expected=$'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nGET echo HTTP/1.1\r\n'
+expected=$(echo "$expected" | od -c)
+
+generated_output=$(echo -e 'GET echo HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
+
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "Echo Test Failed"
     kill -s SIGINT $id
     exit 1
 fi

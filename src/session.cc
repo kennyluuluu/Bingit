@@ -104,7 +104,7 @@ request parse_request_line(const char *request_line, size_t request_size)
                     req_type = request::REPEAT;
                 }
                 // TODO: add /static to all paths at some point in time
-                else if (path.compare(0, 6, "static") == 0)
+                else if (path.compare(0, 1, "/") == 0)
                 {
                     req_type = request::FILE;
                 }
@@ -158,7 +158,8 @@ void session::handle_read(const boost::system::error_code &error,
 
         if (req.req_type == request::FILE || req.req_type == request::REPEAT)
         {
-            BOOST_LOG_TRIVIAL(info) << "Correct request received from " << remote_ip;
+            BOOST_LOG_TRIVIAL(info) << "Correctly formatted request received from: " << remote_ip;
+            BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
             if (req.req_type == request::REPEAT)
             {
                 // construct echo request handler to handle echo request
@@ -194,10 +195,8 @@ void session::handle_read(const boost::system::error_code &error,
         else
         {
             // TODO: handle bad request
-            // std::cout << "Invalid request received:" << std::endl;
-            std::cout << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << std::endl;
-            // std::cout << "incorrect request" << std::endl;
             BOOST_LOG_TRIVIAL(info) << "Incorrect request received from " << remote_ip;
+            BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
             std::string status_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
             char response[status_line.size()];
             strncpy(response, status_line.c_str(), status_line.size());

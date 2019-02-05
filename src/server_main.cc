@@ -29,7 +29,6 @@ boost::asio::io_service io_serv;
 void got_signal(int)
 {
     BOOST_LOG_TRIVIAL(info) << "Received ^C, exiting normally";
-    // std::cout << "\nReceived ^C, exiting normally" << std::endl;
     io_serv.stop();
 }
 

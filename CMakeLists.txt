@@ -26,6 +26,9 @@ enable_testing()
 include(GoogleTest)
 add_subdirectory(/usr/src/googletest googletest)
 
+# https://stackoverflow.com/questions/697560/how-to-copy-directory-from-source-tree-to-binary-tree
+#Copy static folder
+FILE(COPY ./static DESTINATION ${CMAKE_BINARY_DIR})
 # Enable Boost
 # Use static libraries so binaries can be deployed without a full boost install
 set(Boost_USE_STATIC_LIBS ON)
