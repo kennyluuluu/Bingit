@@ -3,13 +3,28 @@
 #include <string>
 #include <boost/log/trivial.hpp>
 
+#include "config_var.h"
 #include "session.h"
 #include "echo_request_handler.h"
 #include "static_request_handler.h"
 
-session::session(boost::asio::io_service &io_service)
-    : socket_(io_service)
+session::session(boost::asio::io_service &io_service, config_var& conf)
+    : socket_(io_service), conf_(conf)
 {
+    //just in case check
+    //the conf should always be valid when passed to session
+    if(conf_.echo_roots.size() == 0)
+    {
+        std::string default_echo_root = "/echo";
+        std::vector<std::string> default_echo_root_vec(1, default_echo_root);
+        conf_.echo_roots = default_echo_root_vec;
+    }
+    else if(conf_.static_roots.size() == 0)
+    {
+        std::string default_static_root = "/static";
+        std::vector<std::string> default_static_root_vec(1, default_static_root);
+        conf_.static_roots = default_static_root_vec;
+    }
 }
 
 tcp::socket &session::socket()
@@ -61,7 +76,7 @@ bool validate_http_version(std::string HTTP_version)
     return true;
 }
 
-request parse_request_line(const char *request_line, size_t request_size)
+request parse_request_line(const char *request_line, size_t request_size, config_var& conf_)
 {
     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
     int iter = 0; // iterator for request_line
@@ -99,18 +114,39 @@ request parse_request_line(const char *request_line, size_t request_size)
         {
             if (path.size() > 0 && has_method == true)
             {
-                if (path.compare(0, 5, "echo") == 0)
+                //the path / will always be mapped to the first static_root/index.html
+                if(path.compare("/") == 0)
                 {
-                    req_type = request::REPEAT;
-                }
-                // TODO: add /static to all paths at some point in time
-                else if (path.compare(0, 1, "/") == 0)
-                {
+                    path = conf_.static_roots[0] + "/index.html";
                     req_type = request::FILE;
                 }
-                else
+                else 
                 {
-                    req_type = request::INVALID;
+                    for(int i = 0; i < conf_.echo_roots.size(); i++)
+                    {
+                        if(path.find(conf_.echo_roots[i]) == 0)
+                        {
+                            req_type = request::REPEAT;
+                            break;
+                        }
+                    }
+
+                    //if it wasn't an echo command
+                    if(req_type == request::INVALID)
+                    {
+                        //all other paths are valid, but those not starting with static_roots
+                        //will always return 404 in static_request_handler
+
+                        if(path.find("/") == 0) //if the path starts with /, then its a valid path
+                        {
+                            req_type = request::FILE;
+                            break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                 }
                 break;
             }
@@ -154,7 +190,7 @@ void session::handle_read(const boost::system::error_code &error,
     if (!error)
     {
         request req;
-        req = parse_request_line(data_, bytes_transferred);
+        req = parse_request_line(data_, bytes_transferred, conf_);
 
         if (req.req_type == request::FILE || req.req_type == request::REPEAT)
         {
@@ -177,7 +213,7 @@ void session::handle_read(const boost::system::error_code &error,
                                             boost::asio::placeholders::error));
             }
             else {
-                static_request_handler a(&socket_, req);
+                static_request_handler a(&socket_, req, conf_.static_roots);
                 std::string response = a.get_response(bytes_transferred, data_);
 
                 // convert c++ response string into buffer

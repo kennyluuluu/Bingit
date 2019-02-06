@@ -4,9 +4,10 @@
 #include <string>
 #include <fstream>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 
-static_request_handler::static_request_handler(boost::asio::ip::tcp::socket *socket, request req)
-    : request_handler(socket, req)
+static_request_handler::static_request_handler(boost::asio::ip::tcp::socket *socket, request req, std::vector<std::string> roots)
+    : request_handler(socket, req), roots_(roots)
 {
 }
 
@@ -19,12 +20,35 @@ std::string static_request_handler::get_response(size_t bytes_transferred, char 
     std::string path = request_.path;
     std::string response = "";
 
-    if (path.compare("/") == 0)
+    bool found = false;
+    for(int i =0; i < roots_.size(); i++)
     {
-        path = "/index.html";
+        //need to add "/" here, bc roots like /static and /static2 would collide
+        //bc /static is a substring of /static2, so all /static#'s would succeed
+        if(path.find(roots_[i] + "/") == 0)
+        {
+            found = true;
+            break;
+        }
     }
 
-    path = "./static" + path;
+    if(!found)
+    {
+        BOOST_LOG_TRIVIAL(info) << "Path does not use any of the static roots, returning 401";
+        
+        std::string status_line = "HTTP/1.1 401 Unauthorized\r\n";
+        std::string headers = "Content-Type: text/plain\r\n";
+        //27 is length of '404 Error: Page not found \r\n'
+        headers += "Content-Length: 27\r\n";
+        headers += "\r\n";
+        headers += "401 Error: Unauthorized path provided\r\n";
+        response = status_line + headers;
+        
+        return response;
+    }
+
+    //make the path point to the current directory
+    path = "." + path;
 
     // https://thispointer.com/c-how-to-extract-file-extension-from-a-path-string-using-boost-c17-filesystem-library/
     boost::filesystem::path path_object(path);
@@ -65,7 +89,8 @@ std::string static_request_handler::get_response(size_t bytes_transferred, char 
     }
     else
     {
-        // file not found
+        BOOST_LOG_TRIVIAL(info) << "Path does not exist, responding with 404";
+
         std::string status_line = "HTTP/1.1 404 Not Found\r\n";
         std::string headers = "Content-Type: text/plain\r\n";
         //27 is length of '404 Error: Page not found \r\n'

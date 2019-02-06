@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # start webserver
-./bin/server ../configs/8080_config &
+./bin/server ../configs/8080_config & 
 id=$!
 
 # valid request test
@@ -33,7 +33,7 @@ fi
 expected=$'404 Error: Page not found\r'
 expected=$(echo "$expected" | od -c)
 
-generated_output=$(curl -sS localhost:8080/non_existent_file | od -c)
+generated_output=$(curl -sS localhost:8080/static/non_existent_file | od -c)
 
 if [ "$expected" != "$generated_output" ]; 
 then
@@ -43,10 +43,10 @@ then
 fi
 
 # echo test
-expected=$'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nGET echo HTTP/1.1\r\n'
+expected=$'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 26\r\n\r\nGET /echo/test HTTP/1.1\r\n'
 expected=$(echo "$expected" | od -c)
 
-generated_output=$(echo -e 'GET echo HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
+generated_output=$(echo -e 'GET /echo/test HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
 
 if [ "$expected" != "$generated_output" ]; 
 then
