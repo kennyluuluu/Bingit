@@ -1,3 +1,5 @@
 server {
   listen 80;
+  echo_root /echo,/oche;
+  static_root /static,/static2;
 }
