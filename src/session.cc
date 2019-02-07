@@ -8,18 +8,18 @@
 #include "echo_request_handler.h"
 #include "static_request_handler.h"
 
-session::session(boost::asio::io_service &io_service, config_var& conf)
+session::session(boost::asio::io_service &io_service, config_var &conf)
     : socket_(io_service), conf_(conf)
 {
     //just in case check
     //the conf should always be valid when passed to session
-    if(conf_.echo_roots.size() == 0)
+    if (conf_.echo_roots.size() == 0)
     {
         std::string default_echo_root = "/echo";
         std::vector<std::string> default_echo_root_vec(1, default_echo_root);
         conf_.echo_roots = default_echo_root_vec;
     }
-    else if(conf_.static_roots.size() == 0)
+    else if (conf_.static_roots.size() == 0)
     {
         std::string default_static_root = "/static";
         std::vector<std::string> default_static_root_vec(1, default_static_root);
@@ -38,14 +38,14 @@ void session::start()
                             boost::bind(&session::handle_read, this,
                                         boost::asio::placeholders::error,
                                         boost::asio::placeholders::bytes_transferred));
-    remote_ip = get_remote_ip();   
+    remote_ip = get_remote_ip();
 }
 
 bool validate_http_version(std::string HTTP_version)
 {
-    if (HTTP_version.size() < 5 ||                         // version must be at least 8 characters e.g. 'HTTP/x.x'
-        !isdigit(HTTP_version[5]) ||                       // edge case e.g. "HTTP/.1"
-        HTTP_version[HTTP_version.size() - 1] == '.' ||	   // edge case e.g. "HTTP/1."
+    if (HTTP_version.size() < 5 ||                      // version must be at least 8 characters e.g. 'HTTP/x.x'
+        !isdigit(HTTP_version[5]) ||                    // edge case e.g. "HTTP/.1"
+        HTTP_version[HTTP_version.size() - 1] == '.' || // edge case e.g. "HTTP/1."
         HTTP_version.compare(0, 5, "HTTP/") != 0)
         return false;
 
@@ -53,9 +53,9 @@ bool validate_http_version(std::string HTTP_version)
 
     for (std::string::size_type i = 5; i < HTTP_version.size(); i++)
     {
-        if (HTTP_version[i] == '.')                    // count the number of .
+        if (HTTP_version[i] == '.') // count the number of .
             count++;
-        else if (!isdigit(HTTP_version[i]))            //if a non-digit is found in the version number, fail
+        else if (!isdigit(HTTP_version[i])) //if a non-digit is found in the version number, fail
             return false;
     }
 
@@ -65,7 +65,7 @@ bool validate_http_version(std::string HTTP_version)
         return true;
 }
 
-request parse_request_line(const char *request_line, size_t request_size, config_var& conf_)
+request parse_request_line(const char *request_line, size_t request_size, config_var &conf_)
 {
     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
     std::string method = "";
@@ -77,63 +77,68 @@ request parse_request_line(const char *request_line, size_t request_size, config
     while (strlen(request_line) > 0)
     {
         if (*request_line == ' ')
-	{
-	    request_line++;
-	    if (method.compare("GET") == 0)
+        {
+            request_line++;
+            if (method.compare("GET") == 0)
                 has_method = true;
-	    else
-	        req_type = request::INVALID;
-	    break;
-	}
+            else
+                req_type = request::INVALID;
+            break;
+        }
         method += *request_line;
-	request_line++;
+        request_line++;
     }
-    
+
     while (strlen(request_line) > 0)
     {
         if (*request_line == ' ')
-	{
-	    request_line++;
-	    //the path / will always be mapped to the first static_root/index.html
-	    if (path.compare("/") == 0 && has_method)
-	    {
-	        path = conf_.static_roots[0] + "/index.html";
-		req_type = request::FILE;
-	    }
-	    else
-	    {
-	        for(int i = 0; i < conf_.echo_roots.size(); i++)
-		{
-		    if(path.find(conf_.echo_roots[i]) == 0 && has_method)
-		    {
-		        req_type = request::REPEAT;
-			break;
-		    }
-		}
-	    }
-	    // if not an echo command, but is still a valid path
-	    if(req_type == request::INVALID && path.find("/") == 0 && has_method) 
+        {
+            request_line++;
+            //the path / will always be mapped to the first static_root/index.html
+            if (path.compare("/") == 0 && has_method)
             {
-	        req_type = request::FILE;
-	    }
-	    //req_type will remain INVALID if none of these conditions are met
-	    break;
-	}
-	path += *request_line;
-	request_line++;
+                path = conf_.static_roots[0] + "/index.html";
+                req_type = request::FILE;
+            }
+            else
+            {
+                for (int i = 0; i < conf_.echo_roots.size(); i++)
+                {
+                    if (path.find(conf_.echo_roots[i]) == 0 && has_method)
+                    {
+                        req_type = request::REPEAT;
+                        break;
+                    }
+                }
+            }
+            // if not an echo command, but is still a valid path
+            if (req_type == request::INVALID && path.find("/") == 0 && has_method)
+            {
+                req_type = request::FILE;
+            }
+            //req_type will remain INVALID if none of these conditions are met
+            break;
+        }
+        path += *request_line;
+        request_line++;
     }
-    
+
+    bool has_carriage_line_feed = false;
+
     while (strlen(request_line) > 1)
     {
         if (*request_line == '\r' && *(request_line + 1) == '\n')
-	{
+        {
+            has_carriage_line_feed = true;
             break;
-	}
-	HTTP_version += *request_line;
-	request_line++;
+        }
+        HTTP_version += *request_line;
+        request_line++;
     }
 
-    if (validate_http_version(HTTP_version) != true)
+
+    //the reqest line must end in a \r\n and the http_version must be valid
+    if (!has_carriage_line_feed || validate_http_version(HTTP_version) != true)
         req_type = request::INVALID;
 
     request req = {method, path, HTTP_version, req_type};
@@ -150,48 +155,48 @@ void session::handle_read(const boost::system::error_code &error,
 
         if (req.req_type == request::REPEAT || req.req_type == request::FILE)
         {
-	    std::string response = "";
-	    if (req.req_type == request::REPEAT)
+            std::string response = "";
+            if (req.req_type == request::REPEAT)
             {
-	        BOOST_LOG_TRIVIAL(info) << "Valid echo request received from " << remote_ip;
-		BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
+                BOOST_LOG_TRIVIAL(info) << "Valid echo request received from " << remote_ip;
+                BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
                 // construct echo request handler to handle echo request
                 echo_request_handler a(&socket_, req);
                 response = a.get_response(bytes_transferred, data_);
-	    }
-	    else if (req.req_type == request::FILE)
+            }
+            else if (req.req_type == request::FILE)
             {
-	        BOOST_LOG_TRIVIAL(info) << "Valid file request received from " << remote_ip;
-		BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
+                BOOST_LOG_TRIVIAL(info) << "Valid file request received from " << remote_ip;
+                BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
 
-		static_request_handler a(&socket_, req, conf_.static_roots);
-		response = a.get_response(bytes_transferred, data_);
-	    }
+                static_request_handler a(&socket_, req, conf_.static_roots);
+                response = a.get_response(bytes_transferred, data_);
+            }
 
-	    // convert c++ response string into buffer
-            const char* response_buf = response.c_str();
+            // convert c++ response string into buffer
+            const char *response_buf = response.c_str();
             size_t response_len = response.size();
 
             // writes response
             boost::asio::async_write(socket_,
-                            boost::asio::buffer(response_buf, response_len),
-                            boost::bind(&session::handle_write, this,
-                                        boost::asio::placeholders::error));
-         }
+                                     boost::asio::buffer(response_buf, response_len),
+                                     boost::bind(&session::handle_write, this,
+                                                 boost::asio::placeholders::error));
+        }
 
-         else
-         {
-             BOOST_LOG_TRIVIAL(info) << "Invalid request received from " << remote_ip;
-	     BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
+        else
+        {
+            BOOST_LOG_TRIVIAL(info) << "Invalid request received from " << remote_ip;
+            BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
 
-             std::string response = "HTTP/1.1 400 Bad Request\r\n\r\n";
-             const char* response_buf = response.c_str();
-             size_t response_len = response.size();
- 
-             boost::asio::async_write(socket_,
-                             boost::asio::buffer(response_buf, response_len),
-                             boost::bind(&session::handle_write, this,
-                                         boost::asio::placeholders::error));
+            std::string response = "HTTP/1.1 400 Bad Request\r\n\r\n";
+            const char *response_buf = response.c_str();
+            size_t response_len = response.size();
+
+            boost::asio::async_write(socket_,
+                                     boost::asio::buffer(response_buf, response_len),
+                                     boost::bind(&session::handle_write, this,
+                                                 boost::asio::placeholders::error));
         }
     }
     else

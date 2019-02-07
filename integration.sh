@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "======================================="
+echo "Integration tests start"
 
 # start webserver
 ./bin/server ../configs/8080_config & 
@@ -9,6 +11,7 @@ expected=$'<!DOCTYPE html><html><body><p>Welcome to the server.</p><p>Would you 
 
 generated_output=$(curl -sS localhost:8080)
 
+echo -e "\n\nINTEGRATION: running valid request test\n"
 if [ "$expected" != "$generated_output" ]; 
 then
     echo "Valid Request Test Failed"
@@ -22,6 +25,7 @@ expected=$(echo -e "$expected" | od -c)
 
 generated_output=$(echo -e 'GE / HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
 
+echo -e "\n\nINTEGRATION: running invalid request test\n"
 if [ "$expected" != "$generated_output" ]; 
 then
     echo "Invalid Request Test Failed"
@@ -35,6 +39,7 @@ expected=$(echo "$expected" | od -c)
 
 generated_output=$(curl -sS localhost:8080/static/non_existent_file | od -c)
 
+echo -e "\n\nINTEGRATION: running bad path test\n"
 if [ "$expected" != "$generated_output" ]; 
 then
     echo "Bad Path Test Failed"
@@ -48,6 +53,7 @@ expected=$(echo "$expected" | od -c)
 
 generated_output=$(echo -e 'GET /echo/test HTTP/1.1\r\n' | nc localhost 8080 -w1 | od -c)
 
+echo -e "\n\nINTEGRATION: running echo test\n"
 if [ "$expected" != "$generated_output" ]; 
 then
     echo "Echo Test Failed"
@@ -56,4 +62,5 @@ then
 fi
 
 echo "Test Passed"
+echo "======================================="
 kill -s SIGINT $id
