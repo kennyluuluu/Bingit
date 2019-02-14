@@ -5,8 +5,8 @@
 
 #include "config_var.h"
 #include "session.h"
-#include "echo_request_handler.h"
-#include "static_request_handler.h"
+#include "echo_handler.h"
+#include "static_handler.h"
 
 session::session(boost::asio::io_service &io_service, config_var &conf)
     : socket_(io_service), conf_(conf)
@@ -161,7 +161,7 @@ void session::handle_read(const boost::system::error_code &error,
                 BOOST_LOG_TRIVIAL(info) << "Valid echo request received from " << remote_ip;
                 BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
                 // construct echo request handler to handle echo request
-                echo_request_handler a(&socket_, req);
+                echo_handler a(&socket_, req);
                 response = a.get_response(bytes_transferred, data_);
             }
             else if (req.req_type == request::FILE)
@@ -169,7 +169,7 @@ void session::handle_read(const boost::system::error_code &error,
                 BOOST_LOG_TRIVIAL(info) << "Valid file request received from " << remote_ip;
                 BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
 
-                static_request_handler a(&socket_, req, conf_.static_roots);
+                static_handler a(&socket_, req, conf_.static_roots);
                 response = a.get_response(bytes_transferred, data_);
             }
 

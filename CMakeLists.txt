@@ -45,7 +45,7 @@ include_directories(include)
 # Add libraries
 add_library(server_lib src/server.cc src/session.cc src/config_parser.cc)
 add_library(config_parser src/config_parser.cc)
-add_library(handler_lib src/request_handler.cc src/echo_request_handler.cc src/static_request_handler.cc)
+add_library(handler_lib src/handler.cc src/echo_handler.cc src/static_handler.cc)
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
@@ -61,8 +61,8 @@ target_link_libraries(server_test server_lib handler_lib gtest_main server_lib $
 add_executable(session_test tests/session_test.cc)
 target_link_libraries(session_test server_lib handler_lib gtest_main server_lib ${Boost_LIBRARIES})
 
-add_executable(request_handler_test tests/request_handler_test.cc)
-target_link_libraries(request_handler_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
+add_executable(handler_test tests/handler_test.cc)
+target_link_libraries(handler_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
 
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
@@ -78,4 +78,4 @@ gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test request_handler_test)
+generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test handler_test)

@@ -1,21 +1,21 @@
 #include <boost/bind.hpp>
 #include <iostream>
-#include "static_request_handler.h"
+#include "static_handler.h"
 #include <string>
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
-static_request_handler::static_request_handler(boost::asio::ip::tcp::socket *socket, request req, std::vector<std::string> roots)
-    : request_handler(socket, req), roots_(roots)
+static_handler::static_handler(boost::asio::ip::tcp::socket *socket, request req, std::vector<std::string> roots)
+    : handler(socket, req), roots_(roots)
 {
 }
 
-static_request_handler::~static_request_handler()
+static_handler::~static_handler()
 {
 }
 
-std::string static_request_handler::get_response(size_t bytes_transferred, char *data_)
+std::string static_handler::get_response(size_t bytes_transferred, char *data_)
 {
     std::string path = request_.path;
     std::string response = "";

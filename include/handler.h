@@ -5,11 +5,11 @@
 #include "request.h"
 using boost::asio::ip::tcp;
 
-class request_handler 
+class handler 
 {
   public:
-    request_handler(boost::asio::ip::tcp::socket* socket, request req);
-    virtual ~request_handler();
+    handler(boost::asio::ip::tcp::socket* socket, request req);
+    virtual ~handler();
     virtual std::string get_response(size_t bytes_transferred, char* data_) = 0;
     tcp::socket* get_socket();
     request get_request();

@@ -1,19 +1,19 @@
 #include <boost/bind.hpp>
 #include <iostream>
-#include "echo_request_handler.h"
+#include "echo_handler.h"
 #include <string>
 
-echo_request_handler::echo_request_handler(boost::asio::ip::tcp::socket* socket, request req)
-    : request_handler(socket, req)
+echo_handler::echo_handler(boost::asio::ip::tcp::socket* socket, request req)
+    : handler(socket, req)
 {
     
 }
 
-echo_request_handler::~echo_request_handler() {
+echo_handler::~echo_handler() {
 
 }
 
-std::string echo_request_handler::get_response(size_t bytes_transferred, char* data_) 
+std::string echo_handler::get_response(size_t bytes_transferred, char* data_) 
 {
     // generate status code and content type headers
     std::string status_line = "HTTP/1.1 200 OK\r\n";
