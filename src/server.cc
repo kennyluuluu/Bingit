@@ -25,7 +25,8 @@
 
 #include <stdlib.h>
 #include <string>
-#include <vector>
+#include <vector>   
+#include <unordered_map>   
 #include "session.h"
 #include "server.h"
 #include "config_var.h"
@@ -310,6 +311,23 @@ config_var server::get_config_vars(const char *file)
 
     bool success = config_parser.Parse(file, &config);
 
+    std::unordered_map<std::string, std::vector<NginxConfig>> map;
+    config.get_handlers(&map);
+    BOOST_LOG_TRIVIAL(info) << "Below are the handlers found during parsing: ";
+    for( std::pair<std::string, std::vector<NginxConfig>> ele : map)
+    {
+        BOOST_LOG_TRIVIAL(info) << "=================START " << ele.first << "=================";
+        int i = 1;
+        for( NginxConfig conf : ele.second)
+        {
+            BOOST_LOG_TRIVIAL(info) << "-------Config " << i << "-------";
+            BOOST_LOG_TRIVIAL(info) << "\n" << conf.ToString();
+            i++;
+        }
+        BOOST_LOG_TRIVIAL(info) << "=================END " << ele.first << "=================";
+    }
+
+    
     config_var result;
     result.port = -1;
     if (!success)

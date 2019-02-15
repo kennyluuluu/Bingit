@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class NginxConfig;
 
@@ -21,6 +22,7 @@ class NginxConfig
 {
   public:
     std::string ToString(int depth = 0);
+    void get_handlers(std::unordered_map<std::string, std::vector<NginxConfig>>* map);
     std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
 };
 
