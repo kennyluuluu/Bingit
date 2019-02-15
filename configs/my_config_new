@@ -1,0 +1,16 @@
+port 80;
+root /usr/src/projects;
+handler static {
+  location /static;
+  root static;
+}
+handler static {
+  location /static2;
+  root static;
+}
+handler echo {
+  location /echo;
+}
+handler echo {
+  location /ohce;
+}
