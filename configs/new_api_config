@@ -14,8 +14,11 @@ handler echo {
   location /echo;
 }
 
-server {
+handler status {
+  location /status;
+}
 
+server {
   listen 8080;
   echo_root /echo;
   static_root /static,/static2;

@@ -2,6 +2,7 @@
 
 #include "handler.h"
 #include <memory>
+#include <unordered_map>
 
 class handler_manager 
 {
@@ -10,5 +11,7 @@ class handler_manager
     std::unique_ptr<handler> createByName(const std::string& name,
                                           const NginxConfig& config,
                                           const std::string& root_path);
+    std::unordered_map<std::string, int> url_counter;
+    std::unordered_map<short, int> code_counter;
 };
 

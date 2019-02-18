@@ -9,7 +9,7 @@ using boost::asio::ip::tcp;
 class session 
 {
   public:
-    session(boost::asio::io_service& io_service, config_params& params);
+    session(boost::asio::io_service& io_service, config_params& params, handler_manager* manager);
     tcp::socket& socket();
     std::string get_remote_ip();
     void start();

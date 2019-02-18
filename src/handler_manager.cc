@@ -13,16 +13,16 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
                                                        const NginxConfig &config,
                                                        const std::string &root_path)
 {
-  if (name.compare("echo") == 0)
-  {
-    return std::unique_ptr<handler>(echo_handler::create(config, root_path));
-  }
-  else if (name.compare("static") == 0)
-  {
-    return std::unique_ptr<handler>(static_handler::create(config, root_path));
-  }
-  else
-  {
-    return std::unique_ptr<handler>(bad_request_handler::create(config, root_path));
-  }
+	if (name.compare("echo") == 0)
+  	{
+    	return std::unique_ptr<handler>(echo_handler::create(config, root_path));
+  	}
+  	else if (name.compare("static") == 0)
+  	{
+    	return std::unique_ptr<handler>(static_handler::create(config, root_path));
+  	}
+  	else
+  	{
+    	return std::unique_ptr<handler>(bad_request_handler::create(config, root_path));
+  	}
 }

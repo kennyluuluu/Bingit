@@ -10,7 +10,7 @@
 #include "reply.h"
 #include "request.h"
 
-session::session(boost::asio::io_service &io_service, config_params &params, handler_manager &manager)
+session::session(boost::asio::io_service &io_service, config_params &params, handler_manager* manager)
     : socket_(io_service), params_(params), manager_(manager)
 {
     
@@ -141,11 +141,29 @@ void session::handle_read(const boost::system::error_code &error,
 	request request_;
 	std::string name = "";
 	NginxConfig config;
-	std::string request_path = parse_request_line(data_);
+	std::string request_path = parse_request_line(data_); //TODO: COMPILE ERROR HERE, NEED NEW FUNCTION?
 	std::unique_ptr<handler> handler_ = manager_->createByName(name,
-                                                                    config,
-                                                                    request_path);
-        std::unique_ptr<reply> response = handler->HandleRequest(request_);
+                                                                config,
+                                                                request_path);
+    std::unique_ptr<reply> response = handler_->HandleRequest(request_);
+
+
+    // update url counter
+    std::unordered_map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(request_path);
+    if (url_iter == manager_->url_counter.end()) 
+    {
+        manager_->url_counter[request_path] = 0;
+    }
+    manager_->url_counter[request_path] += 1;
+
+    // update code counter
+    std::unordered_map<short, int>::const_iterator code_iter = manager_->code_counter.find(response->code);
+    if (code_iter == manager_->code_counter.end())
+    {
+        manager_->code_counter[response->code] = 0;
+    }
+    manager_->code_counter[response->code] += 1;
+
 	//parse_request_line(data_, bytes_transferred, params_);
 
         // if (req.req_type == request::REPEAT || req.req_type == request::FILE)
