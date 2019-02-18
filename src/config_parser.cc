@@ -28,6 +28,29 @@ std::string NginxConfig::ToString(int depth)
   return serialized_config;
 }
 
+int NginxConfig::get_port()
+{
+    for (const auto &statement : statements_)
+    {
+         if(statement->tokens_.size() == 2 &&
+	    statement->tokens_[0].compare("port") == 0)
+	 {
+	     std::string port_num = statement->tokens_[1];
+
+	     //checking if provided port is a number
+	     //obtained and modified from:
+	     //https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
+	     std::string::const_iterator it = port_num.begin();
+	     while (it != port_num.end() && std::isdigit(*it)) ++it;
+	     if (port_num.empty() || it != port_num.end())
+	         return -1;
+	     
+	     return atoi(port_num.c_str());
+	}
+    }
+    return -1;
+}
+
 void NginxConfig::get_handlers(std::unordered_map<std::string, std::vector<NginxConfig>>* map)
 {
   for (const auto &statement : statements_)

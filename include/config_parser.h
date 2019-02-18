@@ -24,6 +24,7 @@ class NginxConfig
     std::string ToString(int depth = 0);
     void get_handlers(std::unordered_map<std::string, std::vector<NginxConfig>>* map);
     std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
+    int get_port();
 };
 
 // The driver that parses a config file and generates an NginxConfig.

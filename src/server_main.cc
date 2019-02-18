@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        using namespace std; // For atoi.
+        //using namespace std; // For atoi.
         server s(io_serv, argv[1]);
         if(s.init())
         {

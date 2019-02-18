@@ -107,56 +107,6 @@ bool server::kill()
     }
 }
 
-short int parse_for_port_number(std::string& str_conf)
-{
-    std::size_t port_pos = str_conf.find("listen ");
-
-    if (port_pos == std::string::npos)
-    {
-        BOOST_LOG_TRIVIAL(error) << "No 'listen' parameter present in config";
-        BOOST_LOG_TRIVIAL(error) << "Config rejected";
-        return -1;
-    }
-
-    //length of 'listen '
-    const int num_chars_in_listen_ = 7;
-    port_pos += num_chars_in_listen_;
-
-    //find position of semi-colon after 'listen '
-    std::size_t end_of_port_num = str_conf.find(";", port_pos);
-    std::string port_num = str_conf.substr(port_pos, end_of_port_num - port_pos);
-
-    //checking if provided port is a number
-    //obtained and modified from:
-    //https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
-    std::string::const_iterator it = port_num.begin();
-
-    while (it != port_num.end() && std::isdigit(*it)) ++it;
-
-    if (port_num.empty() || it != port_num.end())
-    {
-        BOOST_LOG_TRIVIAL(error) << "Provided port number is empty or not a number: " << port_num;
-        BOOST_LOG_TRIVIAL(error) << "Config rejected";
-        return -1;
-    }
-
-    short int port = atoi(port_num.c_str());
-
-    //shouldn't happen bc the string parser above doesn't accept '-'
-    if (port <= 0)
-    {
-        BOOST_LOG_TRIVIAL(error) << "Provided port number is less than or equal to 0: " << port;
-        BOOST_LOG_TRIVIAL(error) << "Config rejected";
-        return -1;
-    }
-    else
-    {
-        BOOST_LOG_TRIVIAL(info) << "Found port " << port << " in config...";
-    }
-
-    return port;
-}
-
 void parse_for_echo_roots(config_var&  conf, std::string& str_conf)
 {
 
@@ -340,14 +290,17 @@ config_var server::get_config_vars(const char *file)
     std::string str_conf = config.ToString();
 
     //search for port number
-    short int port_num = parse_for_port_number(str_conf);
+    int port_num = config.get_port();
     if(port_num == -1)
     {
-        return result;
+        BOOST_LOG_TRIVIAL(error) << "No valid port number found in config.";
+	BOOST_LOG_TRIVIAL(error) << "Config rejected";
+	return result;
     }
     else
     {
         result.port = port_num;
+	BOOST_LOG_TRIVIAL(info) << "Found port " << port_num << " in config...";
     }
     
     //search for echo_roots
