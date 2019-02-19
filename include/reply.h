@@ -10,15 +10,15 @@ class reply
   public:
     reply();
     reply(std::string http_version, short code, std::string mime_type,
-          std::string content, unordered_map<std::string, std::string> headers);
+          std::string content, std::unordered_map<std::string, std::string> headers);
     std::string construct_http_response();
 
-  private:
+  // private:
     std::string http_version;
     short code;
     std::string mime_type;
     std::string content;
-    unordered_map<std::string, std::string> headers;
+    std::unordered_map<std::string, std::string> headers;
 };
 
 #endif

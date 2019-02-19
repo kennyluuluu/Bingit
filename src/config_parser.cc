@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-
+#include <utility>
 #include "config_parser.h"
 
 std::string NginxConfig::ToString(int depth)
@@ -28,7 +28,7 @@ std::string NginxConfig::ToString(int depth)
   return serialized_config;
 }
 
-int NginxConfig::get_port()
+int NginxConfig::get_port() const
 {
     for (const auto &statement : statements_)
     {
@@ -51,7 +51,24 @@ int NginxConfig::get_port()
     return -1;
 }
 
-void NginxConfig::get_handlers(std::unordered_map<std::string, std::vector<NginxConfig>>* map)
+std::string NginxConfig::get_key_value(std::string key) const
+{
+
+  for (const auto &statement : statements_)
+  {
+    //check if there's 2 tokens, no child block,
+    //and the 1st token matches the key
+    if(statement->tokens_.size() == 2 &&
+        statement->tokens_[0].compare(key) == 0 &&
+        statement->child_block_.get() == nullptr)
+    {
+        return statement->tokens_[1];
+    }
+  }
+  return "";
+}
+
+void NginxConfig::get_handler_paths(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* map) const
 {
   for (const auto &statement : statements_)
   {
@@ -63,18 +80,25 @@ void NginxConfig::get_handlers(std::unordered_map<std::string, std::vector<Nginx
         statement->child_block_.get() != nullptr)
     {
       std::string handler_type = statement->tokens_[1];
+      std::string path = statement->child_block_.get()->get_key_value("location");
       
-      //if the map doesn't have this handler yet, initialize it with an empty vector
-      if (map->find(handler_type) == map->end())
+      //if there's a location key-value pair in the child block
+      if(path.compare("") != 0)
       {
-        std::vector<NginxConfig> v;
-        (*map)[handler_type] = std::vector<NginxConfig>();
+        //if the map doesn't have this handler yet, initialize it
+        if (map->find(handler_type) == map->end())
+        {
+          (*map)[path] = std::make_pair(handler_type, *(statement->child_block_.get()));
+        }
+        else
+        {
+          //TODO: add logging to say there's a duplicate config?
+        }
       }
-      (*map)[handler_type].push_back(*(statement->child_block_.get()));
     }
     else if (statement->child_block_.get() != nullptr)
     {
-      statement->child_block_.get()->get_handlers(map);
+      statement->child_block_.get()->get_handler_paths(map);
     }
   }
 }

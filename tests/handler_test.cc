@@ -20,7 +20,7 @@ class RequestHandlerTest : public ::testing::Test
 
     // handler* req_handler;
     boost::asio::io_service io_service;
-    request req = {"GET", "echo", "HTTP/1.1", request::REPEAT};
+    //request req = {"GET", "echo", "HTTP/1.1", request::REPEAT};
     tcp::socket* sock = new tcp::socket(io_service);
 };
 

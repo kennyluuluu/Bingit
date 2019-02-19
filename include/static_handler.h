@@ -6,7 +6,7 @@ using boost::asio::ip::tcp;
 class static_handler : public handler
 {
   public:
-    static_handler(const NginxConfig& config, std::string& server_root);
+    static_handler(const NginxConfig &config, const std::string& server_root);
     static handler* create(const NginxConfig& config,
                             const std::string& root_path);
     std::unique_ptr<reply> HandleRequest(const request& request);

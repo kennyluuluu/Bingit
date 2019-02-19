@@ -2,22 +2,27 @@
 #include <string>
 #include "echo_handler.h"
 #include "static_handler.h"
-#include "404_handler.h"
+#include "bad_request_handler.h"
+#include "handler_manager.h"
 
-unique_ptr<handler> handler_manager::createByName(const string& name,
-		                                  const NginxConfig& config,
-						  const string& root_path)
+handler_manager::handler_manager()
 {
-    if(name.compare("echo") == 0)
-    {
-        return echo_handler::create(config, root_path);
-    }
-    else if(name.compare("static") == 0)
-    {
-        return static_handler::create(config, root_path);
-    }
-    else
-    {
-        return 404_handler::create(config, root_path);
-    }
+}
+
+std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
+                                                       const NginxConfig &config,
+                                                       const std::string &root_path)
+{
+  if (name.compare("echo") == 0)
+  {
+    return std::unique_ptr<handler>(echo_handler::create(config, root_path));
+  }
+  else if (name.compare("static") == 0)
+  {
+    return std::unique_ptr<handler>(static_handler::create(config, root_path));
+  }
+  else
+  {
+    return std::unique_ptr<handler>(bad_request_handler::create(config, root_path));
+  }
 }

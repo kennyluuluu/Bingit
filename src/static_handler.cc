@@ -6,26 +6,27 @@
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
-static_handler::static_handler(const NginxConfig &config, std::string server_root)
+static_handler::static_handler(const NginxConfig &config, const std::string& server_root)
 {
   //TODO: use config object to set member variable handler_root
   //so handler knows where to serve file
-  handler_root = "./static"
+  std::string loc_key = "location";
+  handler_root = config.get_key_value(loc_key);
 }
 
-static handler *static_handler::create(const NginxConfig &config, const std::string &root_path)
+handler *static_handler::create(const NginxConfig &config, const std::string &root_path)
 {
   return new static_handler(config, root_path);
 }
 
-unique_ptr<reply> static_handler::HandleRequest(const request &request)
+std::unique_ptr<reply> static_handler::HandleRequest(const request &request)
 {
   short code = -1;
   std::string mime_type = "";
-  unordered_map<std::string, std::string> headers;
+  std::unordered_map<std::string, std::string> headers;
   std::string content = "";
 
-  std::string path = handler_root + request.get_path();
+  std::string path = handler_root + request.path;
 
   boost::filesystem::path path_object(path);
   std::string extension = "";
@@ -72,7 +73,7 @@ unique_ptr<reply> static_handler::HandleRequest(const request &request)
     std::stringstream buffer;
     buffer << static_file.rdbuf();
 
-    content = buffer.str()
+    content = buffer.str();
 
     //add content length of file
   }
@@ -81,11 +82,12 @@ unique_ptr<reply> static_handler::HandleRequest(const request &request)
     BOOST_LOG_TRIVIAL(info) << "Path does not exist, responding with 404";
 
     code = 404;
-    mime_type = "text/plain" content = "404 Error: Page not found";
+    mime_type = "text/plain";
+    content = "404 Error: Page not found";
   }
 
   headers["Content-Type"] = mime_type;
   headers["Content-Length"] = std::to_string(content.size());
 
-  return make_unique<reply>(request.get_http_version(), code, mime_type, content, headers);
+  return std::unique_ptr<reply>(new reply(request.http_version, code, mime_type, content, headers));
 }

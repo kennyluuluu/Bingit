@@ -1,5 +1,16 @@
-server {
-  listen 8080;
-  echo_root /echo;
-  static_root /static,/static2;
+port 8080;
+root .
+
+handler static {
+  location /static;
+  root static;
+}
+
+handler static {
+  location /static2;
+  root meh;
+}
+
+handler echo {
+  location /echo;
 }

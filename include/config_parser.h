@@ -1,10 +1,13 @@
 // An nginx config file parser.
+#ifndef CONFIG_PARSER_H_
+#define CONFIG_PARSER_H_
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <utility>
 
 class NginxConfig;
 
@@ -22,9 +25,10 @@ class NginxConfig
 {
   public:
     std::string ToString(int depth = 0);
-    void get_handlers(std::unordered_map<std::string, std::vector<NginxConfig>>* map);
+    std::string get_key_value(std::string key) const; 
+    void get_handler_paths(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* map) const;
     std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
-    int get_port();
+    int get_port() const;
 };
 
 // The driver that parses a config file and generates an NginxConfig.
@@ -64,3 +68,4 @@ class NginxConfigParser
 
     TokenType ParseToken(std::istream *input, std::string *value);
 };
+#endif

@@ -43,9 +43,9 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 include_directories(include)
 
 # Add libraries
-add_library(server_lib src/server.cc src/session.cc src/config_parser.cc)
+add_library(server_lib src/server.cc src/session.cc src/config_parser.cc src/config_params.cc src/handler_manager.cc)
 add_library(config_parser src/config_parser.cc)
-add_library(handler_lib src/handler.cc src/echo_handler.cc src/static_handler.cc)
+add_library(handler_lib src/echo_handler.cc src/static_handler.cc src/bad_request_handler.cc src/reply.cc src/request.cc)
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)

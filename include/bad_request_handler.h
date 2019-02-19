@@ -3,10 +3,10 @@
 
 using boost::asio::ip::tcp;
 
-class 404_handler : public handler
+class bad_request_handler : public handler
 {
   public:
-    404_handler(const NginxConfig& config);
+    bad_request_handler(const NginxConfig& config);
     static handler* create(const NginxConfig& config,
                             const std::string& root_path);
     std::unique_ptr<reply> HandleRequest(const request& request);

@@ -11,10 +11,7 @@ using boost::asio::ip::tcp;
 class handler 
 {
   public:
-    handler();
-    virtual static handler* create(const NginxConfig& config,
-                            const std::string& root_path) = 0;
-    std::unique_ptr<reply> HandleRequest(const request& request) = 0;
+    virtual std::unique_ptr<reply> HandleRequest(const request& request) = 0;
 
 };
 

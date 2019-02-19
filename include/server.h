@@ -1,10 +1,11 @@
 #include <boost/asio.hpp>
-#include "config_var.h"
+#include "config_params.h"
+#include "handler_manager.h"
 
 using boost::asio::ip::tcp;
 
 class session;
-struct config_var;
+struct config_params;
 
 class server
 {
@@ -19,11 +20,11 @@ class server
   private:
     void init_logging();
     void start_accept();
-    config_var get_config_vars(const char *file_name);
+    void set_config_params(const char *file_name);
     void handle_accept(session* new_session, 
                         const boost::system::error_code& error);
     boost::asio::io_service& io_service_;
     tcp::acceptor *acceptor_;
-    config_var conf_;
-
+    config_params params_;
+    handler_manager manager_;
 };
