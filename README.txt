@@ -3,20 +3,61 @@ Based on instructions found in
 https://docs.google.com/document/d/1-BsDsv6BerargpyivX1T6BwPCgQ63pBpczkZajHVOtY/edit#heading=h.b8xr8euy7vvy
 
 
-#How the source code is laid out:
+# How the source code is laid out:
 
 
 The main entry point of our server is found in server_main.cc. From here, it will 
-create a server object, whose details can be found in server.h/.cc. 
-The server object can parse the config file and is capable of creating new sessions
-when a client connects to our the server. 
-For each session (session.h/.cc), a handle_manager (handle_manager.h/.cc) will decide
-and create what type of handler to handle a single request. The handlers such as echo, static, 404
-all are from the same interface (handler.h). 
+create a server object, whose details can be found in server.h/.cc. It is capable
+of creating new sessions (session.h/.cc) when a client connects to our the server. 
+
+The server object has a member variable called config_params (found in config_params.h/.cc)
+that parses the config for variables. Here is an example config:
+`port 8080;
+root /usr/src/projects;
+handler echo {
+    location /echo;
+}
+
+handler static {
+    location /static;
+    root static;
+}
+
+handler static {
+    location /static2;
+    root /usr/src/projects/public/static;
+}`
+
+config_params grabs the port by looking for a statement starting with 'port' with the 2nd token
+being a number. `root /usr/src/projects` refers to the server root. Meaning all handlers that
+implement a root variable with a relative path will use the root as the base of the path. As seen
+in the config, URLs starting with '/static' would serve files out of '/usr/src/projects/static;.
+It also parses the config looking for something of the format:
+
+handler <handler_name> {
+    location <URL path_prefix>
+    <handler specific params>
+}
+
+The handler block must have a non empty name as well as a nonempty token for the location.
+
+config_params has a member variable handler_paths that is a map of paths (the location value)
+to a pair <handler type, NginxConfig>, where the handler type is the string token after
+'handler,' and represent what type of handler the config is for (e.g. static or echo).
+NginxConfig is the child block of the 'handler ######' token and it will be given to each
+handler's constructor.
+
+The server also has a handler_manager (handler_manager.h/.cc) member variable which
+has a function createByName that, when given a handler name and NginxConfig, creates the
+corresponding handler.
+
+session (session.h/.cc) will parse the request and determine which handler is needed
+and create it using the handler_manager. The handlers--such as echo, static, bad_request--
+are all from the same interface (handler.h). Sessions are short lived and deleted after writing,
+making the handlers short lived as well. 
 
 
-#How to build, test, and run the code:
-
+# How to build, test, and run the code:
 
 Assuming you are in the base project directory...
 Make a "build" directory if one does not already exist
@@ -39,33 +80,43 @@ Assuming you have already run `cmake..` and `make` and are currently in the buil
     `./bin/server ../configs/my_config
 server is the binary and main entry point for our server and the only parameter is a config file
 
+# How to add a request handler and well-documented header files:
 
-#How to add a request handler, including
-a well-documented example of an existing handler, and
-well-documented header files:
+In order to add a request handler, the new handler must use handler.h as an interface,
+and implement the following two functions:
+    `static handler* create(const NginxConfig& config, const std::string& root_path)`
+    `virtual std::unique_ptr<reply> HandleRequest(const request& request)`
 
 
-In order to add a request handler, the new handler must use handler.h as an interface
-and implement the virtual function get_response(). 
-For example, echo_handler only implements get_response() and has its own constructor
-and destructor. 
+Also, you must add at least one instance of the handler in the config file. Here is the format
+of a handler config block:
+`handler <HANDLER NAME> {
+    location <PATH PREFIX IN URL>
+    <HANDLER SPECIFIC PARAMETERS>
+}`
 
-The config file must contain a new handler block to signify the existence of one.
-In the echo_handler example, our config file contains a block that follows the
-format:
-handler echo {
-  <HANDLER SPECIFIC DETAILS>
-}
+For example, a static handler config block:
 
-Within the block, there should be a "location" keyword followed by the path that
-the handler is in charge of. For example "/echo" for the echo_handler. If a 
-handler has to have a path to serve files from for example, it also should have 
-a "root" keyword followed by a path such as "foo/bar". A more complete handler
-config is our static_handler which looks like:
-handler static {
-  location /static;
-  root static;
-}
+`handler static {
+    location /static
+    root static
+}`
+
+where location is the prefix in the URL that session will look for. For example
+`GET /static/index.html` would result in this particular static handler being created 
+and used to parse this request. As seen in the example config, handlers can have variables
+specific to them. `root` defines what folder this static handler is supposed to look for and
+serve files out of. The parsing of the NginxConfig block should be done in the constructor of
+your handler.
+
+`create` will be used by `handler_manager:createByName` to create instances of your handler 
+in sessions. Thus, you will need to add the handler and its corresponding name to the
+if ladder in `createByName` as well.
+
+`HandleRequest` will be called by a session after it has parsed the request object. This
+is the function that determines what your handler does. For example, the static_handler
+checks if the file path exists, reads the file into a buffer, and appends it as the body
+of a 200 reply.
 
 One last step is to add a new if statement to handler_manager.cc that, when the
 name matches your new handler name, will return a unique_ptr to a newly created
