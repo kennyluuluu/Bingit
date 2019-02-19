@@ -144,7 +144,7 @@ void server::set_config_params(const char *file)
 
 void server::start_accept()
 {
-    session *new_session = new session(io_service_, params_);
+    session *new_session = new session(io_service_, params_, &manager_);
     acceptor_->async_accept(new_session->socket(),
                             boost::bind(&server::handle_accept, this, new_session,
                                         boost::asio::placeholders::error));

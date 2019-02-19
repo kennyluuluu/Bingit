@@ -2,6 +2,7 @@
 #include <string>
 #include "request.h"
 #include "config_params.h"
+#include "handler_manager.h"
 
 using boost::asio::ip::tcp;
 
@@ -22,7 +23,8 @@ class session
     char data_[max_length];
     std::string remote_ip;
     config_params params_;
+    handler_manager* manager_;
 };
 
 bool validate_http_version(std::string HTTP_version);
-request parse_request_line(const char *request_line, size_t request_size, config_params& params);
+std::string parse_request_line(const char *request_line);

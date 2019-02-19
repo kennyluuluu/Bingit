@@ -7,9 +7,11 @@
 #include "session.h"
 #include "echo_handler.h"
 #include "static_handler.h"
+#include "reply.h"
+#include "request.h"
 
-session::session(boost::asio::io_service &io_service, config_params &params)
-    : socket_(io_service), params_(params)
+session::session(boost::asio::io_service &io_service, config_params &params, handler_manager &manager)
+    : socket_(io_service), params_(params), manager_(manager)
 {
     
 }
@@ -52,93 +54,99 @@ bool validate_http_version(std::string HTTP_version)
         return true;
 }
 
-// request parse_request_line(const char *request_line, size_t request_size, config_params &params_)
-// {
-//     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-//     std::string method = "";
-//     std::string path = "";
-//     std::string HTTP_version = "";
-//     std::string body = "";
-//     std::string original_request(request_line);
-//     std::unordered_map<std::string, std::string> headers;
-//     bool has_method = false;
+/*// PARSES TO MAKE SURE REQUESTS ARE VALID, RETURNS PATH
+std::string parse_request_line(const char *request_line)
+{
+    // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+    std::string method = "";
+    std::string path = "";
+    std::string HTTP_version = "";
+    //std::string body = "";
+    //std::string original_request(request_line);
+    //std::unordered_map<std::string, std::string> headers;
+    //bool has_method = false;
 
-//     while (strlen(request_line) > 0)
-//     {
-//         if (*request_line == ' ')
-//         {
-//             request_line++;
-//             if (method.compare("GET") == 0)
-//                 has_method = true;
-//             else
-//                 req_type = request::INVALID;
-//             break;
-//         }
-//         method += *request_line;
-//         request_line++;
-//     }
+    while (strlen(request_line) > 0)
+    {
+        if (*request_line == ' ')
+        {
+            request_line++;
+            if (method.compare("GET") == 0)
+                break;
+            else
+                return "";
+        }
+        method += *request_line;
+        request_line++;
+    }
 
-//     while (strlen(request_line) > 0)
-//     {
-//         if (*request_line == ' ')
-//         {
-//             request_line++;
-//             break;
-//         }
-//         path += *request_line;
-//         request_line++;
-//     }
+    while (strlen(request_line) > 0)
+    {
+        if (*request_line == ' ')
+        {
+            request_line++;
+            break;
+        }
+        path += *request_line;
+        request_line++;
+    }
 
-//     bool has_carriage_line_feed = false;
+    bool has_carriage_line_feed = false;
+    while (strlen(request_line) > 1)
+    {
+        if (*request_line == '\r' && *(request_line + 1) == '\n')
+        {
+            has_carriage_line_feed = true;
+            break;
+        }
+        HTTP_version += *request_line;
+        request_line++;
+    }
 
-//     while (strlen(request_line) > 1)
-//     {
-//         if (*request_line == '\r' && *(request_line + 1) == '\n')
-//         {
-//             has_carriage_line_feed = true;
-//             break;
-//         }
-//         HTTP_version += *request_line;
-//         request_line++;
-//     }
-
-//     while(strlen(request_line) > 1)
-//     {
-//         std::string line = "";
-//         while (strlen(request_line) > 1)
-//         {
-//             if (*request_line == '\r' && *(request_line + 1) == '\n')
-//             {
-//                 has_carriage_line_feed = true;
-//                 break;
-//             }
-//             line += *request_line;
-//             request_line++;
-//         }
-//         std::size_t pos = line.find(":");
-//         if(pos != std::string::npos)
-//         {
-//             headers[line.substr(0, pos)] = line.substr(pos +1).trim();
-//         }
-//     }
+    while(strlen(request_line) > 1)
+    {
+        std::string line = "";
+        while (strlen(request_line) > 1)
+        {
+            if (*request_line == '\r' && *(request_line + 1) == '\n')
+            {
+                has_carriage_line_feed = true;
+                break;
+            }
+            line += *request_line;
+            request_line++;
+        }
+        std::size_t pos = line.find(":");
+        if(pos != std::string::npos)
+        {
+            headers[line.substr(0, pos)] = line.substr(pos +1).trim();
+        }
+    }
     
 
 
-//     //the reqest line must end in a \r\n and the http_version must be valid
-//     if (!has_carriage_line_feed || validate_http_version(HTTP_version) != true)
-//         req_type = request::INVALID;
+    //the reqest line must end in a \r\n and the http_version must be valid
+    if (!has_carriage_line_feed || validate_http_version(HTTP_version) != true)
+        return "";
 
-//     request req(method, path, HTTP_version, headers, body, original_request};
-//     return req;
-// }
+    return path;
+}
+*/
 
 void session::handle_read(const boost::system::error_code &error,
                           size_t bytes_transferred)
 {
     if (!error && false)
     {
-        // request req;
-        // req = parse_request_line(data_, bytes_transferred, params_);
+	request request_;
+	std::string name = "";
+	NginxConfig config;
+	std::string request_path = parse_request_line(data_);
+	std::unique_ptr<handler> handler_ = manager_->createByName(name,
+                                                                    config,
+                                                                    request_path);
+        std::unique_ptr<reply> response = handler->HandleRequest(request_);
+	//parse_request_line(data_, bytes_transferred, params_);
 
         // if (req.req_type == request::REPEAT || req.req_type == request::FILE)
         // {
