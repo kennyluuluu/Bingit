@@ -2,6 +2,7 @@
 #include <boost/bind.hpp>
 #include <string>
 #include <boost/log/trivial.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "config_params.h"
 #include "session.h"
@@ -73,9 +74,7 @@ bool validate_http_version(std::string HTTP_version)
         if (*request_line == ' ')
         {
             request_line++;
-            if (method.compare("GET") == 0)
-                has_method = true;
-            else
+            if (method.compare("GET") != 0) // only GET requests are supported
                 return invalid_request;
             break;
         }
@@ -100,11 +99,16 @@ bool validate_http_version(std::string HTTP_version)
         if (*request_line == '\r' && *(request_line + 1) == '\n')
         {
             has_carriage_line_feed = true;
+            request_line += 2; // to get past the newline
             break;
         }
         HTTP_version += *request_line;
         request_line++;
     }
+
+    //the reqest line must end in a \r\n and the http_version must be valid
+    if (validate_http_version(HTTP_version) != true)
+        return invalid_request;
 
     while(strlen(request_line) > 1)
     {
@@ -114,23 +118,32 @@ bool validate_http_version(std::string HTTP_version)
             if (*request_line == '\r' && *(request_line + 1) == '\n')
             {
                 has_carriage_line_feed = true;
+                request_line += 2;
                 break;
             }
             line += *request_line;
             request_line++;
         }
+        // check for end of header
+        if (line.size() == 0)
+        {
+            break;
+        }
         std::size_t pos = line.find(":");
         if(pos != std::string::npos)
         {
-            headers[line.substr(0, pos)] = line.substr(pos +1); // REMOVED trim() from earlier implementation to compile
+            std::string value(line.substr(pos +1));
+            boost::trim(value);
+            headers[line.substr(0, pos)] = value; 
         }
     }
+
+    if (!has_carriage_line_feed)
+        return invalid_request;
     
 
 
-    //the reqest line must end in a \r\n and the http_version must be valid
-    if (!has_carriage_line_feed || validate_http_version(HTTP_version) != true)
-        return invalid_request;
+
 
     request req(method, path, HTTP_version, headers, body, original_request, true);
     return req;
@@ -144,7 +157,7 @@ void session::handle_read(const boost::system::error_code &error,
 	request request_;
 	std::string name = "";
 	NginxConfig config;
-	std::string request_path = parse_request_line(data_); //TODO: COMPILE ERROR HERE, NEED NEW FUNCTION?
+	request request_path = parse_request_line(data_, bytes_transferred, params_);
 	std::unique_ptr<handler> handler_ = manager_->createByName(name,
                                                                 config,
                                                                 request_path);
