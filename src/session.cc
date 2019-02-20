@@ -55,7 +55,7 @@ bool validate_http_version(std::string HTTP_version)
         return true;
 }
 
- request parse_request_line(const char *request_line, size_t request_size, config_params &params_)
+ request parse_request_line(const char *request_line, size_t request_size)
  {
      // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
      std::string method = "";
@@ -140,10 +140,6 @@ bool validate_http_version(std::string HTTP_version)
 
     if (!has_carriage_line_feed)
         return invalid_request;
-    
-
-
-
 
     request req(method, path, HTTP_version, headers, body, original_request, true);
     return req;
@@ -152,25 +148,56 @@ bool validate_http_version(std::string HTTP_version)
 void session::handle_read(const boost::system::error_code &error,
                           size_t bytes_transferred)
 {
-    if (!error && false)
+    if (!error)
     {
-	request request_;
 	std::string name = "";
 	NginxConfig config;
-	request request_path = parse_request_line(data_, bytes_transferred, params_);
+	request req = parse_request_line(data_, bytes_transferred);
+    BOOST_LOG_TRIVIAL(info) << "REQUEST RECEIVED: Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << " Is_Valid: " << req.is_valid();
+
+    //only check if the request matches a handler if the
+    //request is valid in the first place
+    if(req.is_valid())
+    {
+        for( const auto &ele : params_.handler_paths)
+        {
+            //if the path of the request contains the location
+            //of some handler defined in the config
+
+            //behavior
+            //e.g. req.path = "/static2/index.html"
+            //would collide with some handler with location
+            //"/static2", but not some handler with location
+            //"/static"
+            if(req.path.compare(ele.first) == 0 ||
+                req.path.find(ele.first + "/") == 0)
+            {
+                config = ele.second.second;
+                name = ele.second.first;
+                BOOST_LOG_TRIVIAL(info) << "Found appropriate handler: " << ele.second.first;
+                break;
+            }
+        }
+    }
+
+    if(name.compare("") == 0)
+    {
+        BOOST_LOG_TRIVIAL(info) << "No valid handler found for path, using bad request handler instead";
+    }
+
+
 	std::unique_ptr<handler> handler_ = manager_->createByName(name,
                                                                 config,
-                                                                request_path);
-    std::unique_ptr<reply> response = handler_->HandleRequest(request_);
-
+                                                                params_.server_root);
+    std::unique_ptr<reply> response = handler_->HandleRequest(req);
 
     // update url counter
-    std::unordered_map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(request_path);
+    std::unordered_map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(req.path);
     if (url_iter == manager_->url_counter.end()) 
     {
-        manager_->url_counter[request_path] = 0;
+        manager_->url_counter[req.path] = 0;
     }
-    manager_->url_counter[request_path] += 1;
+    manager_->url_counter[req.path] += 1;
 
     // update code counter
     std::unordered_map<short, int>::const_iterator code_iter = manager_->code_counter.find(response->code);
@@ -180,53 +207,19 @@ void session::handle_read(const boost::system::error_code &error,
     }
     manager_->code_counter[response->code] += 1;
 
-	//parse_request_line(data_, bytes_transferred, params_);
+    std::string http_response = response.get()->construct_http_response();
 
-        // if (req.req_type == request::REPEAT || req.req_type == request::FILE)
-        // {
-        //     std::string response = "";
-        //     if (req.req_type == request::REPEAT)
-        //     {
-        //         BOOST_LOG_TRIVIAL(info) << "Valid echo request received from " << remote_ip;
-        //         BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
-        //         // construct echo request handler to handle echo request
-        //         echo_handler a(&socket_, req);
-        //         response = a.get_response(bytes_transferred, data_);
-        //     }
-        //     else if (req.req_type == request::FILE)
-        //     {
-        //         BOOST_LOG_TRIVIAL(info) << "Valid file request received from " << remote_ip;
-        //         BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
+    // convert c++ response string into buffer
+    const char *http_response_buf = http_response.c_str();
+    size_t response_len = http_response.size();
+    BOOST_LOG_TRIVIAL(info) << "Sending " << response.get()->code << " response";
 
-        //         static_handler a(&socket_, req, params_.static_roots);
-        //         response = a.get_response(bytes_transferred, data_);
-        //     }
+    // writes response
+    boost::asio::async_write(socket_,
+                                boost::asio::buffer(http_response_buf, response_len),
+                                boost::bind(&session::handle_write, this,
+                                            boost::asio::placeholders::error));
 
-        //     // convert c++ response string into buffer
-        //     const char *response_buf = response.c_str();
-        //     size_t response_len = response.size();
-
-        //     // writes response
-        //     boost::asio::async_write(socket_,
-        //                              boost::asio::buffer(response_buf, response_len),
-        //                              boost::bind(&session::handle_write, this,
-        //                                          boost::asio::placeholders::error));
-        // }
-
-        // else
-        // {
-        //     BOOST_LOG_TRIVIAL(info) << "Invalid request received from " << remote_ip;
-        //     BOOST_LOG_TRIVIAL(info) << "Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version;
-
-        //     std::string response = "HTTP/1.1 400 Bad Request\r\n\r\n";
-        //     const char *response_buf = response.c_str();
-        //     size_t response_len = response.size();
-
-        //     boost::asio::async_write(socket_,
-        //                              boost::asio::buffer(response_buf, response_len),
-        //                              boost::bind(&session::handle_write, this,
-        //                                          boost::asio::placeholders::error));
-        // }
     }
     else
     {

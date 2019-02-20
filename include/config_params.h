@@ -14,6 +14,7 @@ class config_params
     config_params(NginxConfig& conf);
 
     short int port;
+    std::string server_root;
     std::unordered_map<std::string, std::pair<std::string, NginxConfig>> handler_paths;
 };
 

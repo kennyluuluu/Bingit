@@ -12,4 +12,5 @@ class static_handler : public handler
     std::unique_ptr<reply> HandleRequest(const request& request);
   private:
     std::string handler_root;
+    std::string location;
 };

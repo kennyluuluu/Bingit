@@ -5,7 +5,6 @@
 
 echo_handler::echo_handler(const NginxConfig &config)
 {
-  //TODO:really don't see any work to be done?
 }
 
 handler *echo_handler::create(const NginxConfig &config, const std::string &root_path)

@@ -16,17 +16,13 @@ reply::reply(std::string http_version, short code, std::string mime_type,
 
 std::string code_to_message(short code)
 {
-  if (code == 200)
+  //TODO: implement more codes
+  switch(code)
   {
-    return "OK";
-  }
-  else if (code == 404)
-  {
-    return "NOT FOUND";
-  }
-  else
-  {
-    return "NO MESSAGE SET";
+    case 200: return "OK";
+    case 400: return "Bad Request";
+    case 404: return "Not Found";
+    default:  return "CODE NOT CONFIGURED";
   }
 }
 
@@ -38,7 +34,7 @@ std::string reply::construct_http_response()
 
   for (std::pair<std::string, std::string> element : headers)
   {
-    result += element.first + " +: " + element.second + "\r\n";
+    result += element.first + ": " + element.second + "\r\n";
   }
 
   result += "\r\n" + content;

@@ -1,5 +1,9 @@
 port 8080;
-root .
+root .;
+
+handler echo {
+  location /echo;
+}
 
 handler static {
   location /static;
@@ -8,9 +12,5 @@ handler static {
 
 handler static {
   location /static2;
-  root meh;
-}
-
-handler echo {
-  location /echo;
+  root static;
 }
