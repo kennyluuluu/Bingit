@@ -67,7 +67,7 @@ bool validate_http_version(std::string HTTP_version)
      bool has_method = false;
 
      // empty request used to signal an invalid request
-     request invalid_request(method, path, HTTP_version, headers, body, original_request, false);
+     request invalid_request(method, path, "HTTP/1.1", headers, body, original_request, false);
 
     while (strlen(request_line) > 0)
     {
