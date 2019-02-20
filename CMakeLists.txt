@@ -64,6 +64,9 @@ target_link_libraries(session_test server_lib handler_lib gtest_main server_lib 
 add_executable(handler_test tests/handler_test.cc)
 target_link_libraries(handler_test server_lib gtest_main server_lib ${Boost_LIBRARIES})
 
+add_executable(status_handler_test tests/status_handler_test.cc)
+target_link_libraries(status_handler_test server_lib handler_lib gtest_main ${Boost_LIBRARIES})
+
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
 find_program(BASH_PROGRAM bash)
