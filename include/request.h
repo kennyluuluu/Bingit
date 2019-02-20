@@ -17,11 +17,12 @@ class request
     request();
     request(std::string meth, std::string path, std::string http_version,
             std::unordered_map<std::string, std::string> headers, std::string body,
-            std::string original_request);
+            std::string original_request, bool valid);
     // REQUEST_METHOD convert_string_to_request_method(std::string str);
     std::string get_original_request();
     std::string get_path();
     std::string get_http_version();
+    bool is_valid();
 
   // private:
     //TODO: turn this into an enum, rn its just not compiling with the enum as the type
@@ -30,6 +31,7 @@ class request
     std::string http_version;
     std::unordered_map<std::string, std::string> headers;
     std::string body;
+    bool valid;
     //required for echo handler, bc it needs the full original request
     std::string original_request;
 

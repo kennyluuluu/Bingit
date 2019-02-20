@@ -54,17 +54,19 @@ bool validate_http_version(std::string HTTP_version)
         return true;
 }
 
-/*// PARSES TO MAKE SURE REQUESTS ARE VALID, RETURNS PATH
-std::string parse_request_line(const char *request_line)
-{
-    // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-    std::string method = "";
-    std::string path = "";
-    std::string HTTP_version = "";
-    //std::string body = "";
-    //std::string original_request(request_line);
-    //std::unordered_map<std::string, std::string> headers;
-    //bool has_method = false;
+ request parse_request_line(const char *request_line, size_t request_size, config_params &params_)
+ {
+     // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+     std::string method = "";
+     std::string path = "";
+     std::string HTTP_version = "";
+     std::string body = "";
+     std::string original_request(request_line);
+     std::unordered_map<std::string, std::string> headers;
+     bool has_method = false;
+
+     // empty request used to signal an invalid request
+     request invalid_request(method, path, HTTP_version, headers, body, original_request, false);
 
     while (strlen(request_line) > 0)
     {
@@ -72,9 +74,10 @@ std::string parse_request_line(const char *request_line)
         {
             request_line++;
             if (method.compare("GET") == 0)
-                break;
+                has_method = true;
             else
-                return "";
+                return invalid_request;
+            break;
         }
         method += *request_line;
         request_line++;
@@ -119,7 +122,7 @@ std::string parse_request_line(const char *request_line)
         std::size_t pos = line.find(":");
         if(pos != std::string::npos)
         {
-            headers[line.substr(0, pos)] = line.substr(pos +1).trim();
+            headers[line.substr(0, pos)] = line.substr(pos +1); // REMOVED trim() from earlier implementation to compile
         }
     }
     
@@ -127,11 +130,11 @@ std::string parse_request_line(const char *request_line)
 
     //the reqest line must end in a \r\n and the http_version must be valid
     if (!has_carriage_line_feed || validate_http_version(HTTP_version) != true)
-        return "";
+        return invalid_request;
 
-    return path;
+    request req(method, path, HTTP_version, headers, body, original_request, true);
+    return req;
 }
-*/
 
 void session::handle_read(const boost::system::error_code &error,
                           size_t bytes_transferred)

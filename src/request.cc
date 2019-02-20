@@ -5,15 +5,15 @@
 
 request::request()
     : method("GET"), path("/"), http_version("HTTP/1.1"), body("")
-      , original_request("GET / HTTP/1.1\r\n\r\n")
+      , original_request("GET / HTTP/1.1\r\n\r\n"), valid(true)
 {
 }
 
 request::request(std::string meth, std::string path, std::string http_version,
                  std::unordered_map<std::string, std::string> headers, std::string body,
-                 std::string original_request)
+                 std::string original_request, bool validity)
     : path(path), http_version(http_version), headers(headers),
-      body(body), original_request(original_request), method(meth)
+      body(body), original_request(original_request), method(meth), valid(validity)
 {
   // method = convert_string_to_request_method(meth);
 }
@@ -40,4 +40,8 @@ std::string request::get_http_version()
 std::string request::get_path()
 {
   return path;
+}
+
+bool request::is_valid() {
+  return valid;
 }
