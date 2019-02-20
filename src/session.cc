@@ -93,6 +93,11 @@ bool validate_http_version(std::string HTTP_version)
         request_line++;
     }
 
+    if(path.size() == 0)
+    {
+        return invalid_request;
+    }
+
     bool has_carriage_line_feed = false;
     while (strlen(request_line) > 1)
     {
