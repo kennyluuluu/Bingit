@@ -21,6 +21,10 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
   	{
     	return std::unique_ptr<handler>(static_handler::create(config, root_path));
   	}
+	else if (name.compare("status") == 0)
+	{
+		return std::unique_ptr<handler>(status_handler::create(config, root_path));
+	}
   	else
   	{
     	return std::unique_ptr<handler>(bad_request_handler::create(config, root_path));
