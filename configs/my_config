@@ -1,5 +1,16 @@
-server {
-  listen 80;
-  echo_root /echo,/oche;
-  static_root /static,/static2;
+port 8080;
+root /usr/src/projects;
+
+handler echo {
+  location /echo;
+}
+
+handler static {
+  location /static;
+  root static;
+}
+
+handler static {
+  location /static2;
+  root static2;
 }

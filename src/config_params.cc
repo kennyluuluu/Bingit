@@ -21,5 +21,10 @@ config_params::config_params(NginxConfig& config)
     {
         server_root = "./";
     }
-    // port = atoi(config.get_key_value(key).c_str());
+    //otherwise append a / to the end so we can just append relative paths later
+    //for all other cases except the root: '/'
+    else if(server_root.compare("/") != 0)
+    {
+        server_root = server_root + "/";
+    }
 }
