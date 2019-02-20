@@ -14,3 +14,7 @@ handler static {
   location /static2;
   root static;
 }
+
+handler status {
+  location /status;
+}

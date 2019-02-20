@@ -12,7 +12,8 @@ of creating new sessions (session.h/.cc) when a client connects to our the serve
 
 The server object has a member variable called config_params (found in config_params.h/.cc)
 that parses the config for variables. Here is an example config:
-`port 8080;
+```
+port 8080;
 root /usr/src/projects;
 handler echo {
     location /echo;
@@ -26,7 +27,12 @@ handler static {
 handler static {
     location /static2;
     root /usr/src/projects/public/static;
-}`
+}
+
+handler status {
+  location /status;
+}
+```
 
 config_params grabs the port by looking for a statement starting with 'port' with the 2nd token
 being a number. `root /usr/src/projects` refers to the server root. Meaning all handlers that
@@ -49,11 +55,15 @@ handler's constructor.
 
 The server also has a handler_manager (handler_manager.h/.cc) member variable which
 has a function createByName that, when given a handler name and NginxConfig, creates the
-corresponding handler.
+corresponding handler. The handler_manager also has member variables that help 
+keep track of certain info that specific handlers may need and passes them to a
+handler when they are made in createByName if necessary.
 
-session (session.h/.cc) will parse the request and determine which handler is needed
-and create it using the handler_manager. The handlers--such as echo, static, bad_request--
-are all from the same interface (handler.h). Sessions are short lived and deleted after writing,
+session (session.h/.cc) will parse the request and use handler_manager to 
+determine which handler is needed and create it. The handlers--such as echo, static, bad_request--
+are all from the same interface (handler.h). Handlers will always have a HandleRequest()
+function that generates a response based on the type of the handler that it is.
+Sessions are short lived and deleted after writing,
 making the handlers short lived as well. 
 
 
@@ -118,6 +128,8 @@ is the function that determines what your handler does. For example, the static_
 checks if the file path exists, reads the file into a buffer, and appends it as the body
 of a 200 reply.
 
-One last step is to add a new if statement to handler_manager.cc that, when the
-name matches your new handler name, will return a unique_ptr to a newly created
-handler. 
+One last step is to add a new if statement to handler_manager.cc in the function
+createByName() that, when the name matches your new handler name, will return a 
+unique_ptr to a newly created handler. That statement should also do necessary 
+setup for that specific handler, such as passing specific member variables or 
+info that the handler needs to generate a response correctly.
