@@ -1,5 +1,5 @@
-port 8080;
-root /usr/src/projects;
+port 80;
+root /;
 
 handler echo {
   location /echo;

@@ -13,4 +13,4 @@ RUN apt-get update && apt-get install -y \
     libboost-regex-dev \
     libgtest-dev \
     gcovr \
-    netcat
+    netcat \
