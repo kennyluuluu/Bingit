@@ -114,14 +114,22 @@ TEST_F(SessionTest, HTTPVersionTest)
 // Message body for GET requests should be ignored.
 TEST_F(SessionTest, MessageBodyTest)
 {
-    const char* MessageBody = "GET / HTTP/1.1\r\nSomeMessage";
+    const char* MessageBody = "GET / HTTP/1.1\r\n\r\nSomeMessage";
     request req = parse_request_line(MessageBody, "255.0.0.0");;
     EXPECT_EQ(req.method, "GET");
     EXPECT_EQ(req.path, "/");
     EXPECT_EQ(req.http_version, "HTTP/1.1");
     EXPECT_TRUE(req.is_valid());
-    EXPECT_EQ(req.original_request, "GET / HTTP/1.1\r\nSomeMessage");
-    //EXPECT_EQ(req.body, "SomeMessage");  //TODO: FIGURE OUT WHY THIS FAILS
+    EXPECT_EQ(req.original_request, "GET / HTTP/1.1\r\n\r\nSomeMessage");
+    EXPECT_EQ(req.body, "SomeMessage");
+}
+
+TEST_F(SessionTest, RequestHeaderTest)
+{
+    const char* RequestHeader = "GET / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\nSomeMessage";
+    request req = parse_request_line(RequestHeader, "255.0.0.0");
+    std::string key = "Content-Type";
+    EXPECT_EQ(req.headers[key], "text/plain");
 }
 
 // Simple sanity test to check if the socket is valid
