@@ -17,12 +17,16 @@ handler *status_handler::create(const NginxConfig &config, const std::string &ro
 
 std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
 {
+    int request_counter = 0;
     short code = 200;
     std::string mime_type = "text/plain";
     std::unordered_map<std::string, std::string> headers;
-    std::string content = "Total Requests: " + std::to_string(url_counter_ptr_->size()) + "\n\n";
 
-
+    for(std::pair<std::string, int> element : *url_counter_ptr_)
+    {
+        request_counter += element.second;
+    }
+    std::string content = "Total Requests: " + std::to_string(request_counter) + "\n\n";
 
     for(std::pair<std::string, int> element : *url_counter_ptr_)
     {

@@ -27,4 +27,4 @@ class session
 };
 
 bool validate_http_version(std::string HTTP_version);
-request parse_request_line(const char *request_line, size_t request_size);
+request parse_request_line(const char *request_line, std::string ip);
