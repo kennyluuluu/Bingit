@@ -24,7 +24,7 @@ class NginxConfigStatement
 class NginxConfig
 {
   public:
-    std::string ToString(int depth = 0);
+    std::string ToString(int depth = 0) const;
     std::string get_key_value(std::string key) const; 
     void get_handler_paths(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* map) const;
     std::vector<std::shared_ptr<NginxConfigStatement>> statements_;

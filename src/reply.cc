@@ -28,16 +28,15 @@ std::string code_to_message(short code)
 
 std::string reply::construct_http_response()
 {
-  std::string result = http_version + " ";
-  result += std::to_string(code) + " ";
-  result += code_to_message(code) + "\r\n";
+    std::string result = http_version + " ";
+    result += std::to_string(code) + " ";
+    result += code_to_message(code) + "\r\n";
 
-  for (std::pair<std::string, std::string> element : headers)
-  {
-    result += element.first + ": " + element.second + "\r\n";
-  }
+    for (std::pair<std::string, std::string> element : headers) {
+      result += element.first + ": " + element.second + "\r\n";
+    }
 
-  result += "\r\n" + content;
+    result += "\r\n" + content;
 
-  return result;
+    return result;
 }

@@ -40,12 +40,20 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.50 REQUIRED COMPONENTS system log_setup log date_time filesystem thread regex chrono atomic)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
+# Enable libcurl
+#set(CURL_LIBRARY "-lcurl")
+find_package(CURL REQUIRED)
+#add_executable (curl-demo convert.cpp)
+#include_directories(${CURL_INCLUDE_DIR})
+
+
 include_directories(include)
 
 # Add libraries
 add_library(server_lib src/server.cc src/session.cc src/config_parser.cc src/config_params.cc src/handler_manager.cc)
 add_library(config_parser src/config_parser.cc)
-add_library(handler_lib src/echo_handler.cc src/static_handler.cc src/bad_request_handler.cc src/status_handler src/reply.cc src/request.cc)
+add_library(handler_lib src/echo_handler.cc src/static_handler.cc src/bad_request_handler.cc src/status_handler src/reply.cc src/request.cc src/proxy_handler.cc)
+target_link_libraries(handler_lib ${CURL_LIBRARIES})
 
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
@@ -67,6 +75,9 @@ target_link_libraries(handler_test server_lib gtest_main server_lib ${Boost_LIBR
 add_executable(status_handler_test tests/status_handler_test.cc)
 target_link_libraries(status_handler_test server_lib handler_lib gtest_main ${Boost_LIBRARIES})
 
+add_executable(proxy_handler_test tests/proxy_handler_test.cc)
+target_link_libraries(proxy_handler_test server_lib handler_lib config_parser gtest_main ${Boost_LIBRARIES})
+
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
 find_program(BASH_PROGRAM bash)
@@ -80,6 +91,7 @@ gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/t
 gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(status_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(proxy_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)

@@ -14,3 +14,4 @@ RUN apt-get update && apt-get install -y \
     libgtest-dev \
     gcovr \
     netcat \
+	libcurl4-openssl-dev --fix-missing

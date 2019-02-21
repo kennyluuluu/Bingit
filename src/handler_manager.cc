@@ -1,5 +1,6 @@
 #include <memory>
 #include <string>
+#include <proxy_handler.h>
 #include "echo_handler.h"
 #include "static_handler.h"
 #include "bad_request_handler.h"
@@ -30,6 +31,10 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
 		((status_handler*)new_handler_ptr)->setCodeMap(&code_counter);
 		((status_handler*)new_handler_ptr)->setPathsMap(handler_paths);
 		return std::unique_ptr<handler>(new_handler_ptr);
+	}
+	else if (name.compare("proxy") == 0)
+	{
+		return std::unique_ptr<handler>(proxy_handler::create(config, root_path));
 	}
   	else
   	{

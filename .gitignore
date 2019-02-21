@@ -4,3 +4,5 @@ build
 build_*
 mirror
 tests/server_log*
+.idea/
+cmake-build-debug/
