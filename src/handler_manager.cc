@@ -28,10 +28,18 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
 		// give access to url and code counter
 		((status_handler*)new_handler_ptr)->setUrlMap(&url_counter);
 		((status_handler*)new_handler_ptr)->setCodeMap(&code_counter);
+		((status_handler*)new_handler_ptr)->setPathsMap(handler_paths);
 		return std::unique_ptr<handler>(new_handler_ptr);
 	}
   	else
   	{
     	return std::unique_ptr<handler>(bad_request_handler::create(config, root_path));
   	}
+}
+
+void handler_manager::setHandlerPathsPtr(std::unordered_map<std::string, 
+                            std::pair<std::string, 
+                            NginxConfig>>* given_handler_paths)
+{
+	handler_paths = given_handler_paths;
 }

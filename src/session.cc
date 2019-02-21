@@ -171,7 +171,7 @@ void session::handle_read(const boost::system::error_code &error,
     {
         std::string name = "";
         NginxConfig config;
-        request req = parse_request_line(data_, remote_ip);
+        request req = parse_request_line(data_, remote_ip); //TODO check if invalid request, if so send 400, not 404
         BOOST_LOG_TRIVIAL(info) << "REQUEST RECEIVED: Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << " Is_Valid: " << req.is_valid();
 
         //only check if the request matches a handler if the

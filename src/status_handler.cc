@@ -33,6 +33,11 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
     {
         content += std::to_string(element.first) + ":" + std::to_string(element.second) + "\n";
     }
+    content += "\n";
+    for(std::pair<std::string, std::pair<std::string, NginxConfig>> element : *paths_map_ptr_)
+    {
+        content += (element.second).first + ":" + (element.first) + "\n";
+    }
 
 
 
@@ -50,4 +55,9 @@ void status_handler::setUrlMap(std::unordered_map<std::string, int>* url_counter
 void status_handler::setCodeMap(std::unordered_map<short, int>* code_counter_ptr)
 {
     code_counter_ptr_ = code_counter_ptr;
+}
+
+void status_handler::setPathsMap(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* paths_map_ptr)
+{
+    paths_map_ptr_ = paths_map_ptr;
 }

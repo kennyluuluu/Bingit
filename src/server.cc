@@ -52,6 +52,8 @@ server::server(boost::asio::io_service &io_service, const char *file_name)
         using boost::asio::ip::tcp;
         acceptor_ = new tcp::acceptor(io_service, tcp::endpoint(tcp::v4(), params_.port));
     }
+
+    manager_.setHandlerPathsPtr(&(params_.handler_paths));
 }
 
 void server::init_logging()

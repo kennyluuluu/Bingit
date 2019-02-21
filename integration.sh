@@ -23,7 +23,7 @@ else
 fi
 
 # invalid request test
-expected=$(echo -e "HTTP/1.1 400 Bad Request\r\nContent-Length: 31\r\nContent-Type: text/plain\r\n\r\n400 Error: Bad Request Received\\n")
+expected=$(echo -e "HTTP/1.1 404 Not Found\r\nContent-Length: 25\r\nContent-Type: text/plain\r\n\r\n404 Error: File Not Found\\n")
 
 generated_output=$(echo -e 'GE / HTTP/1.1\r\n' | nc localhost 8080 -w1)
  
