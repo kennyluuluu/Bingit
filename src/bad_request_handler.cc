@@ -15,10 +15,10 @@ handler* bad_request_handler::create(const NginxConfig &config, const std::strin
 
 std::unique_ptr<reply> bad_request_handler::HandleRequest(const request &request)
 {
-  short code = 400;
+  short code = 404;
   std::string mime_type = "text/plain";
   std::unordered_map<std::string, std::string> headers;
-  std::string content = "400 Error: Bad Request Received";
+  std::string content = "404 Error: File Not Found";
 
   headers["Content-Type"] = mime_type;
   headers["Content-Length"] = std::to_string(content.size());
