@@ -33,14 +33,30 @@ std::string proxy_handler::getRequestURI(const request& fullRequest)
     return fullRequest.path.substr(location.size());
 }
 
-std::unique_ptr<reply> proxy_handler::HandleRequest(const request &request)
+long proxy_handler::getServerResponse(CURL* curl, std::string& serverResponse, const char* URL)
 {
-    auto curl = curl_easy_init();
-    std::string serverResponse;
-    curl_easy_setopt(curl, CURLOPT_URL, (host + getRequestURI(request)).c_str());
+    long http_code = 0;
+    curl_easy_setopt(curl, CURLOPT_URL, URL);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &serverResponse);
     curl_easy_perform(curl);
+    curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
+    return http_code;
+}
+
+std::unique_ptr<reply> proxy_handler::HandleRequest(const request &request) {
+
+    std::string serverResponse;
+    CURL* curl = curl_easy_init();
+    long http_code = getServerResponse(curl, serverResponse, (host+getRequestURI(request)).c_str());
+
+    // redirect if needed
+    while (http_code == 301 || http_code == 302)
+    {
+        char *nextURL = NULL;
+        curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &nextURL);
+        http_code = getServerResponse(curl, serverResponse, nextURL);
+    }
 
     std::unordered_map<std::string, std::string> headers;
     headers["Content-Length"] = std::to_string(serverResponse.size());
