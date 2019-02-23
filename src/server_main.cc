@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <boost/bind.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/thread/thread.hpp>
 #include <string>
 #include "session.h"
 #include "server.h"
@@ -51,7 +52,18 @@ int main(int argc, char *argv[])
         server s(io_serv, argv[1]);
         if(s.init())
         {
-            io_serv.run();
+            // FROM: https://www.boost.org/doc/libs/1_52_0/doc/html/boost_asio/example/http/server3/server.cpp
+            std::vector<boost::shared_ptr<boost::thread>> threads;
+            const size_t THREAD_POOL_SIZE = 20;
+            for (std::size_t i = 0; i < THREAD_POOL_SIZE; ++i)
+            {
+                boost::shared_ptr<boost::thread> thread(new boost::thread(boost::bind(
+                                                 &boost::asio::io_service::run, &s.get_io_service())));
+                threads.push_back(thread);
+            }
+
+            for (std::size_t i = 0; i < threads.size(); ++i)
+                threads[i]->join();
         }
         else
         {

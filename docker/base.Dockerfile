@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libboost-signals-dev \
     libboost-system-dev \
     libboost-regex-dev \
+    libboost-thread-dev \
     libgtest-dev \
     gcovr \
     netcat \
