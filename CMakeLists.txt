@@ -83,6 +83,7 @@ target_link_libraries(proxy_handler_test server_lib handler_lib config_parser gt
 find_program(BASH_PROGRAM bash)
 if (BASH_PROGRAM)
   add_test(integration_test ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/integration.sh)
+  add_test(integration_test_proxy ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/integration.sh)
 endif (BASH_PROGRAM)
 
 # get gtest to work with our tests

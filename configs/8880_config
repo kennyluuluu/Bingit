@@ -1,0 +1,7 @@
+port 8880;
+root .;
+
+handler proxy {
+  location /proxy;
+  host localhost:8080;
+}
