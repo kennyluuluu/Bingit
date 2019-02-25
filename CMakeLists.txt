@@ -96,4 +96,4 @@ gtest_discover_tests(proxy_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test handler_test status_handler_test)
+generate_coverage_report(TARGETS server config_parser server_lib TESTS config_parser_test server_test session_test handler_test status_handler_test proxy_handler_test)
