@@ -15,7 +15,7 @@ RUN make
 RUN ctest -V --output-on_failure
 
 ### Deploy container ###
-FROM ubuntu:latest as deploy
+FROM bingit-assignment-2:base as deploy
 
 # Copy server output binary to "."
 COPY --from=builder /usr/src/project/build/bin/server .
