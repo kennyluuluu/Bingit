@@ -13,6 +13,7 @@
 #include "request.h"
 
 std::mutex mtx;
+std::mutex mtx2;
 
 session::session(boost::asio::io_service &io_service, config_params &params, handler_manager* manager)
     : socket_(io_service), params_(params), manager_(manager)
@@ -27,10 +28,12 @@ tcp::socket &session::socket()
 
 void session::start()
 {
+    mtx2.lock();
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
                             boost::bind(&session::handle_read, this,
                                         boost::asio::placeholders::error,
                                         boost::asio::placeholders::bytes_transferred));
+    mtx2.unlock();
     remote_ip = get_remote_ip();
 }
 
@@ -238,10 +241,12 @@ void session::handle_read(const boost::system::error_code &error,
         BOOST_LOG_TRIVIAL(info) << "Sending " << response.get()->code << " response";
 
         // writes response
+        mtx2.lock();
         boost::asio::async_write(socket_,
                                     boost::asio::buffer(http_response_buf, response_len),
                                     boost::bind(&session::handle_write, this,
                                             boost::asio::placeholders::error));
+        mtx2.unlock();
     }
     else
     {
@@ -253,10 +258,12 @@ void session::handle_write(const boost::system::error_code &error)
 {
     if (!error)
     {
+        mtx2.lock();
         socket_.async_read_some(boost::asio::buffer(data_, max_length),
                                 boost::bind(&session::handle_read, this,
                                             boost::asio::placeholders::error,
                                             boost::asio::placeholders::bytes_transferred));
+        mtx2.unlock();
     }
     else
     {

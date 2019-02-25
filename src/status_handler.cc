@@ -6,12 +6,10 @@
 
 status_handler::status_handler(const NginxConfig &config)
 {
-    // TODO:?
 }
 
 handler *status_handler::create(const NginxConfig &config, const std::string &root_path)
 {
-    // TODO:?
     return new status_handler(config);
 }
 
@@ -26,28 +24,28 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
     {
         request_counter += element.second;
     }
-    std::string content = "Total Requests: " + std::to_string(request_counter) + "\n\n";
+    std::string content = "Total Number of Requests Received: " + std::to_string(request_counter) + "\n\n";
 
     for(std::pair<std::string, int> element : *url_counter_ptr_)
     {
-        content += element.first + ":" + std::to_string(element.second) + "\n";
+        content += "Number of requests received for " + element.first + ": " + std::to_string(element.second) + "\n";
     }
     content += "\n";
     for(std::pair<short, int> element : *code_counter_ptr_)
     {
-        content += std::to_string(element.first) + ":" + std::to_string(element.second) + "\n";
+        content += "Number of " + std::to_string(element.first) + " responses sent: " + std::to_string(element.second) + "\n";
     }
     content += "\n";
     for(std::pair<std::string, std::pair<std::string, NginxConfig>> element : *paths_map_ptr_)
     {
-        content += (element.second).first + ":" + (element.first) + "\n";
+        content += "A " + (element.second).first + " request handler exists for the path: " + (element.first) + "\n";
     }
 
 
 
     headers["Content-Type"] = mime_type;
     headers["Content-Length"] = std::to_string(content.size());
-    // TODO
+
     return std::unique_ptr<reply>(new reply(request.http_version, code, mime_type, content, headers));
 }
 
