@@ -1,6 +1,7 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <string>
+#include <mutex>
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -10,6 +11,8 @@
 #include "static_handler.h"
 #include "reply.h"
 #include "request.h"
+
+std::mutex mtx;
 
 session::session(boost::asio::io_service &io_service, config_params &params, handler_manager* manager)
     : socket_(io_service), params_(params), manager_(manager)
@@ -202,12 +205,14 @@ void session::handle_read(const boost::system::error_code &error,
         {
             BOOST_LOG_TRIVIAL(info) << "No valid handler found for path, using bad request handler instead";
         }
-    
+        mtx.lock();
         std::unique_ptr<handler> handler_ = manager_->createByName(name,
                                                                     config,
                                                                     params_.server_root);
+        mtx.unlock();
         std::unique_ptr<reply> response = handler_->HandleRequest(req);
 
+        mtx.lock();
         // update url counter
         std::unordered_map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(req.path);
         if (url_iter == manager_->url_counter.end()) 
@@ -223,7 +228,8 @@ void session::handle_read(const boost::system::error_code &error,
             manager_->code_counter[response->code] = 0;
         }
         manager_->code_counter[response->code] += 1;
-
+        mtx.unlock();
+        
         std::string http_response = response.get()->construct_http_response();
 
         // convert c++ response string into buffer
