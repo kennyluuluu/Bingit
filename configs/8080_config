@@ -18,8 +18,3 @@ handler static {
 handler status {
   location /status;
 }
-
-handler proxy {
-  location /teamcherry;
-  host teamcherry.com.au;
-}

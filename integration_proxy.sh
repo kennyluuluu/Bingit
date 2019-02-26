@@ -3,9 +3,9 @@ echo "======================================="
 echo "Integration proxy tests start"
 
 # start webserver
-./bin/server ../configs/8080_config > /dev/null & 
+./bin/server ../configs/8080_config & 
 idBack=$!
-./bin/server ../configs/8880_config > /dev/null & 
+./bin/server ../configs/8880_config & 
 idFront=$!
 
 sleep 1
