@@ -3,7 +3,7 @@ echo "======================================="
 echo "Integration tests start"
 
 # start webserver
-./bin/server ../configs/8080_config & 
+./bin/server ../configs/8080_config > /dev/null & 
 id=$!
 
 sleep 1
@@ -52,8 +52,6 @@ else
     echo -e "Bad Path Test Passed\n"
 fi
 
-echo test
-expected=$'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 26\r\n\r\nGET /echo/test HTTP/1.1\r\n'
 expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 26\r\nContent-Type: text/plain\r\n\r\nGET /echo/test HTTP/1.1\r\n")
 
 generated_output=$(echo -e 'GET /echo/test HTTP/1.1\r\n' | nc localhost 8080 -w1 )

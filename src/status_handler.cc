@@ -1,8 +1,10 @@
 #include <boost/bind.hpp>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <boost/log/trivial.hpp>
 #include "status_handler.h"
+#include <vector>
 
 status_handler::status_handler(const NginxConfig &config)
 {
@@ -20,6 +22,8 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
     std::string mime_type = "text/plain";
     std::unordered_map<std::string, std::string> headers;
 
+    std::vector<std::string> sorted_paths;
+
     for(std::pair<std::string, int> element : *url_counter_ptr_)
     {
         request_counter += element.second;
@@ -28,9 +32,21 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
 
     for(std::pair<std::string, int> element : *url_counter_ptr_)
     {
-        content += "Number of requests received for " + element.first + ": " + std::to_string(element.second) + "\n";
+        sorted_paths.push_back(element.first);
     }
+    std::sort(sorted_paths.begin(), sorted_paths.end());
+
+    for(std::string& name : sorted_paths)
+    {
+        content += "Number of requests received for " + name + ": " + std::to_string((*url_counter_ptr_)[name]) + "\n";
+    }
+
+    // for(std::pair<std::string, int> element : *url_counter_ptr_)
+    // {
+    //     content += "Number of requests received for " + element.first + ": " + std::to_string(element.second) + "\n";
+    // }
     content += "\n";
+
     for(std::pair<short, int> element : *code_counter_ptr_)
     {
         content += "Number of " + std::to_string(element.first) + " responses sent: " + std::to_string(element.second) + "\n";
@@ -40,8 +56,6 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
     {
         content += "A " + (element.second).first + " request handler exists for the path: " + (element.first) + "\n";
     }
-
-
 
     headers["Content-Type"] = mime_type;
     headers["Content-Length"] = std::to_string(content.size());
