@@ -62,6 +62,8 @@ echo -e "\n\nINTEGRATION: running echo test\n"
 
 if [ "$expected" != "$generated_output" ]; 
 then
+    echo "${expected}"
+    echo "${generated_output}"
     echo -e "Echo Test Failed\n"
     kill -s SIGINT $id
     exit 1

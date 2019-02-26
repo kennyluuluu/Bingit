@@ -42,7 +42,7 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
   	}
 }
 
-void handler_manager::setHandlerPathsPtr(std::unordered_map<std::string, 
+void handler_manager::setHandlerPathsPtr(std::map<std::string, 
                             std::pair<std::string, 
                             NginxConfig>>* given_handler_paths)
 {

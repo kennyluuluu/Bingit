@@ -49,17 +49,17 @@ std::unique_ptr<reply> status_handler::HandleRequest(const request &request)
     return std::unique_ptr<reply>(new reply(request.http_version, code, mime_type, content, headers));
 }
 
-void status_handler::setUrlMap(std::unordered_map<std::string, int>* url_counter_ptr)
+void status_handler::setUrlMap(std::map<std::string, int>* url_counter_ptr)
 {
     url_counter_ptr_ = url_counter_ptr;
 }
 
-void status_handler::setCodeMap(std::unordered_map<short, int>* code_counter_ptr)
+void status_handler::setCodeMap(std::map<short, int>* code_counter_ptr)
 {
     code_counter_ptr_ = code_counter_ptr;
 }
 
-void status_handler::setPathsMap(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* paths_map_ptr)
+void status_handler::setPathsMap(std::map<std::string, std::pair<std::string, NginxConfig>>* paths_map_ptr)
 {
     paths_map_ptr_ = paths_map_ptr;
 }

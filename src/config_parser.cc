@@ -68,7 +68,7 @@ std::string NginxConfig::get_key_value(std::string key) const
   return "";
 }
 
-void NginxConfig::get_handler_paths(std::unordered_map<std::string, std::pair<std::string, NginxConfig>>* map) const
+void NginxConfig::get_handler_paths(std::map<std::string, std::pair<std::string, NginxConfig>>* map) const
 {
   for (const auto &statement : statements_)
   {

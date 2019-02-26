@@ -217,7 +217,7 @@ void session::handle_read(const boost::system::error_code &error,
 
         mtx.lock();
         // update url counter
-        std::unordered_map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(req.path);
+        std::map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(req.path);
         if (url_iter == manager_->url_counter.end()) 
         {
             manager_->url_counter[req.path] = 0;
@@ -225,7 +225,7 @@ void session::handle_read(const boost::system::error_code &error,
         manager_->url_counter[req.path] += 1;
 
         // update code counter
-        std::unordered_map<short, int>::const_iterator code_iter = manager_->code_counter.find(response->code);
+        std::map<short, int>::const_iterator code_iter = manager_->code_counter.find(response->code);
         if (code_iter == manager_->code_counter.end())
         {
             manager_->code_counter[response->code] = 0;

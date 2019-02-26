@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <utility>
 #include "config_parser.h"
 
@@ -15,7 +16,7 @@ class config_params
 
     short int port;
     std::string server_root;
-    std::unordered_map<std::string, std::pair<std::string, NginxConfig>> handler_paths;
+    std::map<std::string, std::pair<std::string, NginxConfig>> handler_paths;
 };
 
 #endif

@@ -50,17 +50,17 @@ done
 
 expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 579\r\nContent-Type: text/plain\r\n\r\n\
 Total Number of Requests Received: 36\n\n\
-Number of requests received for /static/index.html: 10\n\
 Number of requests received for /echo/: 15\n\
+Number of requests received for /echo/test: 1\n\
 Number of requests received for /static/doesnt_exist.html: 7\n\
-Number of requests received for /static2/index.html: 3\n\
-Number of requests received for /echo/test: 1\n\n\
-Number of 404 responses sent: 7\n\
-Number of 200 responses sent: 29\n\n\
-A static request handler exists for the path: /static2\n\
-A status request handler exists for the path: /status\n\
+Number of requests received for /static/index.html: 10\n\
+Number of requests received for /static2/index.html: 3\n\n\
+Number of 200 responses sent: 29\n\
+Number of 404 responses sent: 7\n\n\
 A echo request handler exists for the path: /echo\n\
-A static request handler exists for the path: /static\n")
+A static request handler exists for the path: /static\n\
+A static request handler exists for the path: /static2\n\
+A status request handler exists for the path: /status\n")
 
 generated_output=$(echo -e 'GET /status HTTP/1.1\r\n' | nc localhost 8080 -w1)
 if [ "$expected" != "$generated_output" ];
