@@ -23,3 +23,8 @@ handler proxy {
   location /teamcherry;
   host teamcherry.com.au;
 }
+
+handler meme {
+  location /meme;
+  root meme;
+}

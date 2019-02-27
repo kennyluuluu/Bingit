@@ -5,6 +5,7 @@
 #include "static_handler.h"
 #include "bad_request_handler.h"
 #include "status_handler.h"
+#include "meme_handler.h"
 #include "handler_manager.h"
 
 handler_manager::handler_manager()
@@ -35,6 +36,10 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
 	else if (name.compare("proxy") == 0)
 	{
 		return std::unique_ptr<handler>(proxy_handler::create(config, root_path));
+	}
+	else if (name.compare("meme") == 0)
+	{
+		return std::unique_ptr<handler>(meme_handler::create(config, root_path));
 	}
   	else
   	{

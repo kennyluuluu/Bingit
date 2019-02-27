@@ -18,3 +18,8 @@ handler static {
 handler status {
   location /status;
 }
+
+handler meme {
+  location /meme;
+  root meme;
+}

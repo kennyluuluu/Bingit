@@ -2,6 +2,9 @@
 echo "======================================="
 echo "Thread Integration tests start"
 
+PATH_TO_CURL_OUTPUT="../tests/curloutput"
+PATH_TO_CURL_EXPECTED="../tests/curloutput_expected"
+
 # start webserver
 ./bin/server ../configs/8080_config & 
 id=$!
@@ -9,25 +12,24 @@ id=$!
 sleep 1
 
 #multithread test
-expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 26\r\nContent-Type: text/plain\r\n\r\nGET /echo/test HTTP/1.1\r\n")
-
 for i in {1..15}
 do
   echo_request=$(curl -s --limit-rate 1 "http://localhost:8080/echo/") &
 done
 
-generated_output=$(echo -e 'GET /echo/test HTTP/1.1\r\n' | nc localhost 8080 -w1)
+curl -s "http://localhost:8080/echo/" -o $PATH_TO_CURL_OUTPUT
+# User-Agent: curl/7.47.0 on devel environment, User-Agent: curl/7.58.0 in cloud, regex diff now ignores this line
+diff --ignore-matching-lines '.*User\-Agent:.*' $PATH_TO_CURL_OUTPUT $PATH_TO_CURL_EXPECTED
+rc=$?;
 
 echo -e "\n\nINTEGRATION: running multithread test\n"
 
-if [ "$expected" != "$generated_output" ];
+if [ $rc -ne 0 ] 
 then
-    echo "${expected}"
-    echo "${generated_output}"
     echo -e "Multithread Test Failed\n"
     kill -s SIGINT $id
     exit 1
-else
+else 
     echo -e "Multithread Test Passed\n"
 fi
 
@@ -48,16 +50,16 @@ do
 done
 
 
-expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 579\r\nContent-Type: text/plain\r\n\r\n\
+expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 583\r\nContent-Type: text/plain\r\n\r\n\
 Total Number of Requests Received: 36\n\n\
-Number of requests received for /echo/: 15\n\
-Number of requests received for /echo/test: 1\n\
+Number of requests received for /echo/: 16\n\
 Number of requests received for /static/doesnt_exist.html: 7\n\
 Number of requests received for /static/index.html: 10\n\
 Number of requests received for /static2/index.html: 3\n\n\
 Number of 200 responses sent: 29\n\
 Number of 404 responses sent: 7\n\n\
 A echo request handler exists for the path: /echo\n\
+A meme request handler exists for the path: /meme\n\
 A static request handler exists for the path: /static\n\
 A static request handler exists for the path: /static2\n\
 A status request handler exists for the path: /status\n")
