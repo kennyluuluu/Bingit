@@ -79,7 +79,7 @@ request parse_request_line(const char *request_line, std::string ip)
         if (*request_line == ' ')
         {
             request_line++;
-            if (method.compare("GET") != 0) // only GET requests are supported
+            if ((method.compare("GET") != 0) && (method.compare("POST") != 0)) // only GET and POST requests are supported
             {
                 BOOST_LOG_TRIVIAL(info) << "HTTP Request with unsupported method: \"" << method << "\" received from  " << ip;
                 return invalid_request;

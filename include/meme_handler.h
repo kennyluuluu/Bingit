@@ -12,6 +12,11 @@ class meme_handler : public handler
                             const std::string& root_path);
     std::unique_ptr<reply> HandleRequest(const request& request);
   private:
+    void handle_new(std::string &path, 
+                    short &code, 
+                    std::string &mime_type, 
+                    std::string &content,
+                    const bool &passed_double_check);
     std::string handler_root;
     std::string location;
 };
