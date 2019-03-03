@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include "config_params.h"
 #include "handler_manager.h"
+#include <sqlite3.h>
 
 using boost::asio::ip::tcp;
 
@@ -19,6 +20,7 @@ class server
 
   private:
     void init_logging();
+    bool init_sqlite3();
     void start_accept();
     void set_config_params(const char *file_name);
     void handle_accept(session* new_session, 
@@ -27,4 +29,5 @@ class server
     tcp::acceptor *acceptor_;
     config_params params_;
     handler_manager manager_;
+    sqlite3 *db;
 };

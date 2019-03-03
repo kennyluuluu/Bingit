@@ -31,6 +31,7 @@
 #include "server.h"
 #include "config_params.h"
 #include "config_parser.h"
+#include <sqlite3.h>
 
 namespace logging = boost::log;
 // namespace src = boost::log::sources;
@@ -78,9 +79,44 @@ void server::init_logging()
     BOOST_LOG_TRIVIAL(trace) << "Log file created";
 }
 
+bool server::init_sqlite3()
+{
+    // The following code to set up an sqlite3 database is credited to
+    // https://www.tutorialspoint.com/sqlite/sqlite_c_cpp.htm
+    char *zErrMsg = 0;
+    int rc = 0;
+    char *sql;
+
+    rc = sqlite3_open(NULL, &db);
+    if (rc)
+    {
+        BOOST_LOG_TRIVIAL(error) << "Failed to initialize sqlite3 database:"; //<< sqlite3_errmsg(db);
+        return false;
+    }
+    BOOST_LOG_TRIVIAL(info) << "Opened database successfully.";
+
+    // Create SQL statement
+    sql = "CREATE TABLE MEMES(" \
+        "ID INT PRIMARY KEY     NOT NULL," \
+        "TEMPLATE       TEXT    NOT NULL," \
+        "TOP            TEXT    NOT NULL," \
+        "BOTTOM         TEXT    NOT NULL);";
+    rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg);
+    
+    if (rc != SQLITE_OK)
+    {
+        BOOST_LOG_TRIVIAL(error) << "SQL error: \n" << zErrMsg;
+        sqlite3_free(zErrMsg);
+        sqlite3_close(db);
+        return false;
+    }
+    BOOST_LOG_TRIVIAL(info) << "Table created successfully.";
+    return true;        
+}
+
 bool server::init()
 {
-    if (acceptor_ != nullptr)
+    if (acceptor_ != nullptr && init_sqlite3())
     {
         BOOST_LOG_TRIVIAL(info) << "Initialized server on port " << params_.port << "...";
         start_accept();
