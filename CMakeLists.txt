@@ -41,10 +41,12 @@ find_package(Boost 1.50 REQUIRED COMPONENTS system log_setup log date_time files
 message(STATUS "Boost version: ${Boost_VERSION}")
 
 # Enable libcurl
-#set(CURL_LIBRARY "-lcurl")
 find_package(CURL REQUIRED)
-#add_executable (curl-demo convert.cpp)
-#include_directories(${CURL_INCLUDE_DIR})
+#https://stackoverflow.com/questions/41640029/how-can-i-link-cmake-and-sqlite-without-an-external-script
+
+#Enable sqlite3
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+find_package (sqlite3 REQUIRED)
 
 
 include_directories(include)
@@ -58,6 +60,9 @@ target_link_libraries(handler_lib ${CURL_LIBRARIES})
 # Add executable and link libraries
 add_executable(server src/server_main.cc)
 target_link_libraries(server server_lib handler_lib ${Boost_LIBRARIES})
+if (SQLITE3_FOUND)
+  target_link_libraries (handler_lib ${SQLITE3_LIBRARIES})
+endif (SQLITE3_FOUND)
 
 # Add test executable and link libraries
 add_executable(config_parser_test tests/config_parser_test.cc)
