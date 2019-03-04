@@ -41,7 +41,7 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
     else if (name.compare("meme") == 0)
     {
         handler* new_handler_ptr = meme_handler::create(config, root_path);
-	((meme_handler*)new_handler_ptr)->database_setter(db_);
+	((meme_handler*)new_handler_ptr)->set_db_ptr(db_);
 	return std::unique_ptr<handler>(new_handler_ptr);
     }
     else

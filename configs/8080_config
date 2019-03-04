@@ -22,4 +22,5 @@ handler status {
 handler meme {
   location /meme;
   root meme;
+  view /view;
 }

@@ -13,7 +13,7 @@ class meme_handler : public handler
     static handler* create(const NginxConfig& config,
                            const std::string& root_path);
     std::unique_ptr<reply> HandleRequest(const request& request);
-    void database_setter(sqlite3 *db);
+    void set_db_ptr(sqlite3 *db);
   private:
     void prepare_new_request(std::string &path, 
                     short &code, 
@@ -23,9 +23,14 @@ class meme_handler : public handler
                                 short &code,
                                 std::string &mime_type,
                                 std::string &content);
+    void prepare_view_request(const std::string body,
+                                short &code,
+                                std::string &mime_type,
+                                std::string &content);
     void prepare_list_request();
     std::string handler_root;
     std::string location;
+    std::string view_path;
     std::string unique_id;
     sqlite3 *db_;
 };

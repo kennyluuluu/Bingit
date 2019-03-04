@@ -8,6 +8,12 @@
 
 std::mutex id_lock;
 
+struct meme_row {
+    std::string temp;
+    std::string top;
+    std::string bottom;
+};
+
 int meme_handler::meme_count = 0;
 
 meme_handler::meme_handler(const NginxConfig &config, const std::string &server_root)
@@ -38,7 +44,16 @@ meme_handler::meme_handler(const NginxConfig &config, const std::string &server_
 
     if(location == "")
     {
-        BOOST_LOG_TRIVIAL(info) << "WARNING: NEW_MEME HANDLER WITH EMPTY/UNCONFIGURED PATH";
+        BOOST_LOG_TRIVIAL(info) << "WARNING: NEW_MEME HANDLER WITH EMPTY/UNCONFIGURED LOCATION";
+    }
+
+
+    std::string view_key = "view";
+    view_path = config.get_key_value(view_key);
+
+    if(view_path == "")
+    {
+        BOOST_LOG_TRIVIAL(info) << "WARNING: NEW_MEME HANDLER WITH EMPTY/UNCONFIGURED VIEW PATH";
     }
 }
 
@@ -47,7 +62,7 @@ handler *meme_handler::create(const NginxConfig &config, const std::string &root
     return new meme_handler(config, root_path);
 }
 
-void meme_handler::database_setter(sqlite3 *db)
+void meme_handler::set_db_ptr(sqlite3 *db)
 {
     db_ = db;
 }
@@ -68,15 +83,11 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
         headers["Content-Type"] = mime_type;                                                                                                                                                                               headers["Content-Length"] = std::to_string(content.size());
         return std::unique_ptr<reply>(new reply(request.http_version, code, mime_type, content, headers));
     }
-    /*else
-    {
-        request_path_without_location = request.path.substr(location.size());
-    }*/
     
     std::string path = handler_root;
     BOOST_LOG_TRIVIAL(info) << request.path;
 
-    if (request.path.compare("/meme/new") == 0 || request.path.compare("/meme/new/") == 0)
+    if (request.path.compare("/meme/new") == 0 || request.path.compare("/meme/new") == 0)
     {
         prepare_new_request(path, code, mime_type, content);
     }
@@ -84,9 +95,9 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     {
         prepare_create_request(request.body, code, mime_type, content);
     }
-    else if (request.path.compare("/meme/view") == 0 || request.path.compare("/meme/view/") == 0)
+    else if (request.path.compare(location + view_path) == 0 || request.path.compare(location + view_path + "/") == 0)
     {
-
+        prepare_view_request(request.body, code, mime_type, content);
     }
     else if (request.path.compare("/meme/list") == 0 || request.path.compare("/meme/list/") == 0)
     {
@@ -168,6 +179,78 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
         mime_type = "text/html";
         content = "<header>Meme Generated!</header><a href=\"/meme/view?id=$new_meme.id\">$new_meme.id</a>";
              //TODO: generate the URL and link it up here ^
+    }
+}
+
+static int view_callback(void* arg, int numColumns, char** result, char** columnNames)
+{
+    meme_row* mrp = (meme_row*) arg;
+    BOOST_LOG_TRIVIAL(info) << "Found matching row in db";
+
+    for (int i=0; i< numColumns; i++){
+        BOOST_LOG_TRIVIAL(info) << columnNames[i] << " " << result[i];
+        std::string column = columnNames[i];
+        std::string val = result[i];
+        if(column.compare("TEMPLATE") == 0)
+        {
+            mrp->temp = val;
+        }
+        else if(column.compare("TOP") == 0)
+        {
+            mrp->top = val;
+        }
+        else if(column.compare("BOTTOM") == 0)
+        {
+            mrp->bottom = val;
+        }
+        else
+        {
+            BOOST_LOG_TRIVIAL(info) << "Unexpected column/value " << column << " " << val;
+        }
+    }
+    return 0;
+}
+
+void meme_handler::prepare_view_request(const std::string body, short &code, std::string &mime_type, std::string &content)
+{
+    // process form input about new meme
+    BOOST_LOG_TRIVIAL(info) << body;
+
+    // referenced https://stackoverflow.com/questions/9899440/parsing-html-form-data
+    char meme_id[sizeof(body)] = "";
+
+    sscanf(body.c_str(), "id=%[^&]", meme_id);
+
+    // convert to string
+    std::string meme_id_s(meme_id);
+
+    if (meme_id_s.empty())
+    {
+        code = 400;
+        mime_type = "text/plain";
+        content = "400 Error: Bad Request";
+    }
+    else 
+    {
+        id_lock.lock();
+        std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM from MEMES where ID='" + meme_id_s + "';";
+        char* err = NULL;
+        meme_row result;
+        sqlite3_exec(db_, SQL.c_str(), view_callback, &result, &err );
+        id_lock.unlock();
+        if (err!=NULL)
+        {
+            BOOST_LOG_TRIVIAL(info) << err;
+            sqlite3_free(err); 
+            code = 404;
+            mime_type = "text/html";
+            content = "<header>Meme " + meme_id_s + " not found :(</header>";
+            return;
+        }
+        code = 200;
+        mime_type = "text/html";
+        
+        content = "<style>body { display: inline-block; position: relative; }span {color: white;font: 2em bold Impact, sans-serif; position: absolute; text-align: center; width: 100%;}#top { top: 0; }#bottom { bottom: 0; }</style><body><img src=\"/static/sponge.jpeg\"> <span id=\"top\">" + result.top + "</span><span id=\"bottom\">" + result.bottom + "</span></body>";
     }
 }
 

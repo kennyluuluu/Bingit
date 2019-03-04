@@ -85,8 +85,8 @@ bool server::init_sqlite3()
     // https://www.tutorialspoint.com/sqlite/sqlite_c_cpp.htm
     char *zErrMsg = 0;
     int rc = 0;
-    char *sql;
-
+    std::string sql;
+    
     rc = sqlite3_open(NULL, &db);
     if (rc)
     {
@@ -101,7 +101,7 @@ bool server::init_sqlite3()
         "TEMPLATE       TEXT    NOT NULL," \
         "TOP            TEXT    NOT NULL," \
         "BOTTOM         TEXT    NOT NULL);";
-    rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg);
+    rc = sqlite3_exec(db, sql.c_str(), NULL, 0, &zErrMsg);
     
     if (rc != SQLITE_OK)
     {
