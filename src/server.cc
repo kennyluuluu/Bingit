@@ -111,6 +111,7 @@ bool server::init_sqlite3()
         return false;
     }
     BOOST_LOG_TRIVIAL(info) << "Table created successfully.";
+    manager_.db_ = db;
     return true;        
 }
 

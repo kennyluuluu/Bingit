@@ -7,6 +7,7 @@
 #include "status_handler.h"
 #include "meme_handler.h"
 #include "handler_manager.h"
+#include <sqlite3.h>
 
 handler_manager::handler_manager()
 {
@@ -39,7 +40,9 @@ std::unique_ptr<handler> handler_manager::createByName(const std::string &name,
     }
     else if (name.compare("meme") == 0)
     {
-        return std::unique_ptr<handler>(meme_handler::create(config, root_path));
+        handler* new_handler_ptr = meme_handler::create(config, root_path);
+	((meme_handler*)new_handler_ptr)->database_setter(db_);
+	return std::unique_ptr<handler>(new_handler_ptr);
     }
     else
     {

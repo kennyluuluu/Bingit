@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <string>
 #include "handler.h"
+#include <sqlite3.h>
 
 using boost::asio::ip::tcp;
 
@@ -12,6 +13,7 @@ class meme_handler : public handler
     static handler* create(const NginxConfig& config,
                            const std::string& root_path);
     std::unique_ptr<reply> HandleRequest(const request& request);
+    void database_setter(sqlite3 *db);
   private:
     void prepare_new_request(std::string &path, 
                     short &code, 
@@ -25,4 +27,5 @@ class meme_handler : public handler
     std::string handler_root;
     std::string location;
     std::string unique_id;
+    sqlite3 *db_;
 };

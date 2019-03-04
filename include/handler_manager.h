@@ -3,7 +3,7 @@
 #include "handler.h"
 #include <memory>
 #include <map>
-
+#include <sqlite3.h>
 
 class handler_manager 
 {
@@ -18,6 +18,6 @@ class handler_manager
     std::map<std::string, int> url_counter;
     std::map<short, int> code_counter;
     std::map<std::string, std::pair<std::string, NginxConfig>>* handler_paths;
-
+    sqlite3 *db_;
 };
 

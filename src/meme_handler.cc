@@ -4,6 +4,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/bind.hpp>
 #include <mutex>
+#include <sqlite3.h>
 
 std::mutex id_lock;
 
@@ -46,6 +47,11 @@ handler *meme_handler::create(const NginxConfig &config, const std::string &root
     return new meme_handler(config, root_path);
 }
 
+void meme_handler::database_setter(sqlite3 *db)
+{
+    db_ = db;
+}
+
 std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
 {
     short code = 404;
@@ -77,6 +83,10 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     else if (request.path.compare("/meme/create") == 0 || request.path.compare("/meme/create/") == 0)
     {
         prepare_create_request(request.body, code, mime_type, content);
+    }
+    else if (request.path.compare("/meme/view") == 0 || request.path.compare("/meme/view/") == 0)
+    {
+
     }
     else if (request.path.compare("/meme/list") == 0 || request.path.compare("/meme/list/") == 0)
     {
@@ -149,6 +159,7 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
         id_lock.lock();
         meme_handler::meme_count++;
         unique_id = meme_handler::meme_count;
+        
         id_lock.unlock();
         // TODO: check for more invalid inputs
         // TODO: escape user-generate input
