@@ -14,6 +14,7 @@ struct meme_row {
     std::string top;
     std::string bottom;
     std::string id;
+    bool data_found;
 };
 
 int meme_handler::meme_count = 0;
@@ -97,9 +98,9 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     {
         prepare_create_request(request.body, code, mime_type, content);
     }
-    else if (request.path.compare(location + view_path) == 0 || request.path.compare(location + view_path + "/") == 0)
+    else if (request.path.find(location + view_path + "?id=") == 0)
     {
-        prepare_view_request(request.body, code, mime_type, content);
+        prepare_view_request(request.path, code, mime_type, content);
     }
     else if (request.path.compare("/meme/list") == 0 || request.path.compare("/meme/list/") == 0)
     {
@@ -141,6 +142,12 @@ void meme_handler::prepare_new_request(std::string &path,
     }
 }
 
+static int create_callback(void* arg, int numColumns, char** result, char** columnNames)
+{
+    return 0;
+}
+
+
 void meme_handler::prepare_create_request(const std::string body, short &code, std::string &mime_type, std::string &content)
 {
     // process form input about new meme
@@ -160,7 +167,6 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
 
     // empty fields are bad
     std::string default_option = "Select+a+template...";
-    BOOST_LOG_TRIVIAL(info) << default_option;
     if (default_option.compare(pic_file_s) == 0 || pic_file_s.empty() || top_text_s.empty() || bot_text_s.empty())
     {
         code = 400;
@@ -172,15 +178,23 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
         id_lock.lock();
         meme_handler::meme_count++;
         unique_id = meme_handler::meme_count;
+        content = "<header>Meme " + std::to_string(meme_handler::meme_count) + " Generated!</header><a href=\"/meme/view?id=" + std::to_string(meme_handler::meme_count) + "\">Click here to see your meme</a>";
         
+        std::string SQL = "INSERT INTO MEMES VALUES (" + std::to_string(meme_handler::meme_count) + ", '"+pic_file_s+"', '" + top_text_s + "', '" + bot_text_s + "');";
+        char* err = NULL;
+        sqlite3_exec(db_, SQL.c_str(), create_callback, NULL, &err );
+        if (err!=NULL)
+        {
+            BOOST_LOG_TRIVIAL(info) << err;
+            sqlite3_free(err); 
+            code = 404;
+            mime_type = "text/html";
+            content = "<header>Couldn't create meme :( Try again later</header>";
+            return;
+        }
         id_lock.unlock();
-        // TODO: check for more invalid inputs
-        // TODO: escape user-generate input
-        // TODO: save creation request to file if safe THIS MUST BE THREAD SAFE
         code = 200;
         mime_type = "text/html";
-        content = "<header>Meme Generated!</header><a href=\"/meme/view?id=$new_meme.id\">$new_meme.id</a>";
-             //TODO: generate the URL and link it up here ^
     }
 }
 
@@ -189,6 +203,8 @@ static int view_callback(void* arg, int numColumns, char** result, char** column
     meme_row* mrp = (meme_row*) arg;
     BOOST_LOG_TRIVIAL(info) << "Found matching row in db";
 
+    bool foundData = false;
+
     for (int i=0; i< numColumns; i++){
         BOOST_LOG_TRIVIAL(info) << columnNames[i] << " " << result[i];
         std::string column = columnNames[i];
@@ -196,32 +212,35 @@ static int view_callback(void* arg, int numColumns, char** result, char** column
         if(column.compare("TEMPLATE") == 0)
         {
             mrp->temp = val;
+            foundData = true;
         }
         else if(column.compare("TOP") == 0)
         {
             mrp->top = val;
+            foundData = true;
         }
         else if(column.compare("BOTTOM") == 0)
         {
             mrp->bottom = val;
+            foundData = true;
         }
         else
         {
             BOOST_LOG_TRIVIAL(info) << "Unexpected column/value " << column << " " << val;
         }
     }
+    mrp->data_found = foundData; 
     return 0;
 }
 
-void meme_handler::prepare_view_request(const std::string body, short &code, std::string &mime_type, std::string &content)
+void meme_handler::prepare_view_request(const std::string path, short &code, std::string &mime_type, std::string &content)
 {
-    // process form input about new meme
-    BOOST_LOG_TRIVIAL(info) << body;
-
     // referenced https://stackoverflow.com/questions/9899440/parsing-html-form-data
-    char meme_id[sizeof(body)] = "";
+    char meme_id[sizeof(path)] = "";
 
-    sscanf(body.c_str(), "id=%[^&]", meme_id);
+    std::string regex = location + view_path + "?id=%[^&]";
+
+    sscanf(path.c_str(), regex.c_str(), meme_id);
 
     // convert to string
     std::string meme_id_s(meme_id);
@@ -238,6 +257,7 @@ void meme_handler::prepare_view_request(const std::string body, short &code, std
         std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM from MEMES where ID='" + meme_id_s + "';";
         char* err = NULL;
         meme_row result;
+        result.data_found = false;
         sqlite3_exec(db_, SQL.c_str(), view_callback, &result, &err );
         id_lock.unlock();
         if (err!=NULL)
@@ -249,10 +269,19 @@ void meme_handler::prepare_view_request(const std::string body, short &code, std
             content = "<header>Meme " + meme_id_s + " not found :(</header>";
             return;
         }
+        else if (!result.data_found)
+        {
+            BOOST_LOG_TRIVIAL(info) << "No error, but db read didn't reach callback";
+            code = 404;
+            mime_type = "text/html";
+            content = "<header>Meme " + meme_id_s + " not found :(</header>";
+            return;
+        }
         code = 200;
         mime_type = "text/html";
+
         
-        content = "<style>body { display: inline-block; position: relative; }span {color: white;font: 2em bold Impact, sans-serif; position: absolute; text-align: center; width: 100%;}#top { top: 0; }#bottom { bottom: 0; }</style><body><img src=\"/static/sponge.jpeg\"> <span id=\"top\">" + result.top + "</span><span id=\"bottom\">" + result.bottom + "</span></body>";
+        content = "<style>body { display: inline-block; position: relative; }span {color: white;font: 2em bold Impact, sans-serif; position: absolute; text-align: center; width: 100%;}#top { top: 0; }#bottom { bottom: 0; }</style><body><img src=\"/static/" + result.temp + "\"> <span id=\"top\">" + result.top + "</span><span id=\"bottom\">" + result.bottom + "</span></body>";
     }
 }
 
@@ -261,6 +290,8 @@ static int list_callback(void* arg, int numColumns, char** result, char** column
     meme_row* mrp = new meme_row; 
     std::vector<meme_row*>* meme_rows = (std::vector<meme_row*>*)arg; // cast arg to a pointer to a vector of pointers to meme_rows
 
+    bool data_found = false;
+
 
     for (int i=0; i< numColumns; i++){
         std::string column = columnNames[i];
@@ -268,18 +299,22 @@ static int list_callback(void* arg, int numColumns, char** result, char** column
         if (column.compare("ID") == 0)
         {
             mrp->id = val;
+            data_found = true;
         }
         else if(column.compare("TEMPLATE") == 0)
         {
             mrp->temp = val;
+            data_found = true;
         }
         else if(column.compare("TOP") == 0)
         {
             mrp->top = val;
+            data_found = true;
         }
         else if(column.compare("BOTTOM") == 0)
         {
             mrp->bottom = val;
+            data_found = true;
         }
         else
         {
@@ -287,6 +322,7 @@ static int list_callback(void* arg, int numColumns, char** result, char** column
         }
     }
     meme_rows->push_back(mrp);
+    mrp->data_found = data_found;
     return 0;
 }
 
