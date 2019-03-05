@@ -27,7 +27,10 @@ class meme_handler : public handler
                                 short &code,
                                 std::string &mime_type,
                                 std::string &content);
-    void prepare_list_request();
+    void prepare_list_request(const std::string body,
+                              short &code,
+                              std::string &mime_type,
+                              std::string &content);
     std::string handler_root;
     std::string location;
     std::string view_path;

@@ -5,6 +5,7 @@
 #include <boost/bind.hpp>
 #include <mutex>
 #include <sqlite3.h>
+#include <vector>
 
 std::mutex id_lock;
 
@@ -12,6 +13,7 @@ struct meme_row {
     std::string temp;
     std::string top;
     std::string bottom;
+    std::string id;
 };
 
 int meme_handler::meme_count = 0;
@@ -101,7 +103,7 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     }
     else if (request.path.compare("/meme/list") == 0 || request.path.compare("/meme/list/") == 0)
     {
-        prepare_list_request();
+        prepare_list_request(request.body, code, mime_type, content);
     }
     
 
@@ -254,7 +256,66 @@ void meme_handler::prepare_view_request(const std::string body, short &code, std
     }
 }
 
-void meme_handler::prepare_list_request()
+static int list_callback(void* arg, int numColumns, char** result, char** columnNames)
 {
-    //TODO
+    meme_row* mrp = new meme_row; 
+    std::vector<meme_row*>* meme_rows = (std::vector<meme_row*>*)arg; // cast arg to a pointer to a vector of pointers to meme_rows
+
+
+    for (int i=0; i< numColumns; i++){
+        std::string column = columnNames[i];
+        std::string val = result[i];
+        if (column.compare("ID") == 0)
+        {
+            mrp->id = val;
+        }
+        else if(column.compare("TEMPLATE") == 0)
+        {
+            mrp->temp = val;
+        }
+        else if(column.compare("TOP") == 0)
+        {
+            mrp->top = val;
+        }
+        else if(column.compare("BOTTOM") == 0)
+        {
+            mrp->bottom = val;
+        }
+        else
+        {
+            BOOST_LOG_TRIVIAL(info) << "Unexpected column/value " << column << " " << val;
+        }
+    }
+    meme_rows->push_back(mrp);
+    return 0;
+}
+
+void meme_handler::prepare_list_request(const std::string body, short &code, std::string &mime_type, std::string &content)
+{
+    id_lock.lock();
+    std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM, ID FROM MEMES;";
+    char* err = NULL;
+    std::vector<meme_row*> result;
+    sqlite3_exec(db_, SQL.c_str(), list_callback, &result, &err );
+    id_lock.unlock();
+    if (err!=NULL)
+        {
+            BOOST_LOG_TRIVIAL(info) << err;
+            sqlite3_free(err); 
+            code = 404;
+            mime_type = "text/html";
+            content = "<header>No memes found :(</header>";
+            return;
+        }
+    BOOST_LOG_TRIVIAL(info) << "Found " << result.size() <<  " rows in db";
+    code = 200;
+    mime_type = "text/html";
+    std::string output_html = "<h1>List of All Memes</h1>";
+    output_html += "<ul>";
+    for (int i = 0; i < result.size(); i++)
+    {
+        output_html += "<li><a href=/meme/view?id=" + result[i]->id + ">" + "/meme/view?id=" + result[i]->id + "</a></li>";
+    }
+    output_html += "</ul>";
+    content = output_html;
 }
