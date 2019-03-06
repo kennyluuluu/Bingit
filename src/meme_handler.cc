@@ -166,7 +166,7 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
     std::string bot_text_s(bot_text);
 
     // empty fields are bad
-    std::string default_option = "Select+a+template...";
+    std::string default_option = "Choose...";
     if (default_option.compare(pic_file_s) == 0 || pic_file_s.empty() || top_text_s.empty() || bot_text_s.empty())
     {
         code = 400;
@@ -281,7 +281,19 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
         mime_type = "text/html";
 
         
-        content = "<style>body { display: inline-block; position: relative; }span {color: white;font: 2em bold Impact, sans-serif; position: absolute; text-align: center; width: 100%;}#top { top: 0; }#bottom { bottom: 0; }</style><body><img src=\"/static/" + result.temp + "\"> <span id=\"top\">" + result.top + "</span><span id=\"bottom\">" + result.bottom + "</span></body>";
+        content =
+        "<style> \
+            body{position: relative; text-align: center; color: white; background-color: #283747;} \
+            div{color: white; font: 2em bold Impact, sans-serif; \
+                position: absolute; text-align: center;} \
+            #top{top:5%; left: 50%; transform: translate(-50%, -50%);} \
+            #bottom{top:95%; left: 50%; transform: translate(-50%, -50%); } \
+        </style> \
+        <body> \
+            <img src=\"/static/" + result.temp + "\"> \
+            <div id=\"top\">" + result.top + "</div> \
+            <div id=\"bottom\">" + result.bottom + "</div> \
+        </body>";
     }
 }
 
