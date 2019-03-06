@@ -1,10 +1,40 @@
-<form action="/meme/create" method="post">
-    <select name="image">
-      <option>Select a template...</option>
-      <option value="simply.jpg">one does not simply</option>
-      <option value="grumpy.jpg">grumpy cat</option>
-    </select><br>
-    <input type="text" name="top" placeholder="Top text..."><br>
-    <input type="text" name="bottom" placeholder="Bottom text..."><br>
-    <input type="submit" value="Create">
-</form>
+<style>
+body {background-color: #283747;
+      color: white;
+      font: Impact;
+      text-align: center;
+}
+h1 {
+    font-size: 100px;
+}
+form {
+    font-size:30px;
+}
+select {
+    height:30px;
+    width:280px;
+}
+input {
+    height:35px;
+    width:280px;
+}
+</style>
+
+<body>
+    <h1>Meme<br>Generator</h1>
+    <form action="/meme/create" method="post">
+        Meme Template:<br>
+        <select name="image">
+	    <option>Choose...</option>
+            <option value="simply.jpg">One Does Not Simply</option>
+            <option value="grumpy.jpg">Grumpy Cat</option>
+            <option value="pikachu.jpg">Surprised Pikachu</option>
+	</select>
+        <br><br>
+        Top Text:<br>
+	<input type="text" name="top"><br><br>
+        Bottom Text:<br>
+	<input type="text" name="bottom"><br><br>
+        <input type="submit" style="width:100px;" value="Generate">
+    </form>
+</body>
