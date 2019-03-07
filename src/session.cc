@@ -28,12 +28,10 @@ tcp::socket &session::socket()
 
 void session::start()
 {
-    mtx2.lock();
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
                             boost::bind(&session::handle_read, this,
                                         boost::asio::placeholders::error,
                                         boost::asio::placeholders::bytes_transferred));
-    mtx2.unlock();
     remote_ip = get_remote_ip();
 }
 
@@ -177,9 +175,19 @@ void session::handle_read(const boost::system::error_code &error,
     {
         std::string name = "";
         NginxConfig config;
-        request req = parse_request_line(data_, remote_ip); //TODO check if invalid request, if so send 400, not 404
-        BOOST_LOG_TRIVIAL(info) << "REQUEST RECEIVED: Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << " Is_Valid: " << req.is_valid();
+        int i = 0;
+        // make copy of data_ up to bytes_transferred
+        char data_copy[bytes_transferred+1];
+        while (i < bytes_transferred)
+        {
+            data_copy[i] = data_[i];
+            i++;
+        }
+        data_copy[bytes_transferred] = '\0';
 
+        request req = parse_request_line(data_copy, remote_ip); //TODO check if invalid request, if so send 400, not 404
+        BOOST_LOG_TRIVIAL(info) << "REQUEST RECEIVED: Method: " << req.method << " Path: " << req.path << " HTTP Version: " << req.http_version << " Is_Valid: " << req.is_valid();
+        BOOST_LOG_TRIVIAL(info) << "REQ data: \n" << std::string(data_copy);
         //only check if the request matches a handler if the
         //request is valid in the first place
         if(req.is_valid())
@@ -241,12 +249,12 @@ void session::handle_read(const boost::system::error_code &error,
         BOOST_LOG_TRIVIAL(info) << "Sending " << response.get()->code << " response";
 
         // writes response
-        mtx2.lock();
+        mtx.lock();
         boost::asio::async_write(socket_,
                                     boost::asio::buffer(http_response_buf, response_len),
                                     boost::bind(&session::handle_write, this,
                                             boost::asio::placeholders::error));
-        mtx2.unlock();
+        mtx.unlock();
     }
     else
     {
@@ -258,12 +266,10 @@ void session::handle_write(const boost::system::error_code &error)
 {
     if (!error)
     {
-        mtx2.lock();
         socket_.async_read_some(boost::asio::buffer(data_, max_length),
                                 boost::bind(&session::handle_read, this,
                                             boost::asio::placeholders::error,
                                             boost::asio::placeholders::bytes_transferred));
-        mtx2.unlock();
     }
     else
     {

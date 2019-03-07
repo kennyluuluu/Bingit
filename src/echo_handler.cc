@@ -2,6 +2,7 @@
 #include <iostream>
 #include "echo_handler.h"
 #include <string>
+#include <boost/log/trivial.hpp>
 
 echo_handler::echo_handler(const NginxConfig &config)
 {
@@ -18,6 +19,9 @@ std::unique_ptr<reply> echo_handler::HandleRequest(const request &request)
   std::string mime_type = "text/plain";
   std::unordered_map<std::string, std::string> headers;
   std::string content = request.original_request;
+
+  BOOST_LOG_TRIVIAL(info) << "Echo content:\n" << content;
+
 
   headers["Content-Type"] = mime_type;
   headers["Content-Length"] = std::to_string(content.size());

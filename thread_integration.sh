@@ -14,7 +14,7 @@ sleep 1
 #multithread test
 for i in {1..15}
 do
-  echo_request=$(curl -s --limit-rate 1 "http://localhost:8080/echo/") &
+  echo_request=$(curl -s -H "Keep-Alive: 3" "http://localhost:8080/echo/") &
 done
 
 curl -s "http://localhost:8080/echo/" -o $PATH_TO_CURL_OUTPUT
