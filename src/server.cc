@@ -43,6 +43,7 @@ server::server(boost::asio::io_service &io_service, const char *file_name)
 {
     init_logging();
 
+
     set_config_params(file_name);
     if (params_.port == -1)
     {
@@ -52,6 +53,11 @@ server::server(boost::asio::io_service &io_service, const char *file_name)
     {
         using boost::asio::ip::tcp;
         acceptor_ = new tcp::acceptor(io_service, tcp::endpoint(tcp::v4(), params_.port));
+    }
+
+    if(init_curl() != 0)
+    {
+        BOOST_LOG_TRIVIAL(info) << "WARNING: CURL GLOBAL INIT FAILED. PROXY AND MEME HANDLERS MAY BREAK";
     }
 
     manager_.setHandlerPathsPtr(&(params_.handler_paths));
@@ -115,6 +121,11 @@ bool server::init_sqlite3()
     return true;        
 }
 
+bool server::init_curl()
+{
+    return curl_global_init(CURL_GLOBAL_DEFAULT);
+}
+
 bool server::init()
 {
     if (acceptor_ != nullptr && init_sqlite3())
@@ -132,6 +143,8 @@ bool server::init()
 
 bool server::kill()
 {
+    curl_global_cleanup();
+
     if (acceptor_ != nullptr && &io_service_ != nullptr)
     {
         BOOST_LOG_TRIVIAL(info) << "Killed server...";

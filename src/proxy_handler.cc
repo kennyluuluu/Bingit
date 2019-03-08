@@ -62,5 +62,6 @@ std::unique_ptr<reply> proxy_handler::HandleRequest(const request &request) {
     headers["Content-Length"] = std::to_string(serverResponse.size());
     headers["Content-Type"] = "text/html";
     reply result = reply(request.http_version, 200, "text/html", serverResponse, headers);
+    curl_easy_cleanup(curl);
     return std::make_unique<reply>(result);
 }

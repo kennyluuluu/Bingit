@@ -2,6 +2,7 @@
 #include "config_params.h"
 #include "handler_manager.h"
 #include <sqlite3.h>
+#include "curl/curl.h"
 
 using boost::asio::ip::tcp;
 
@@ -21,6 +22,7 @@ class server
   private:
     void init_logging();
     bool init_sqlite3();
+    bool init_curl();
     void start_accept();
     void set_config_params(const char *file_name);
     void handle_accept(session* new_session, 

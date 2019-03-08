@@ -159,11 +159,45 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
     char bot_text[sizeof(body)] = "";
 
     sscanf(body.c_str(), "image=%[^&]&top=%[^&]&bottom=%[^&]", pic_file, top_text, bot_text);
+    
+    for(int i=0; i < strlen(pic_file); i++)
+    {
+        if(pic_file[i] == '+')
+        {
+            pic_file[i] = ' ';
+        }
+    }
+    for(int i=0; i < strlen(top_text); i++)
+    {
+        if(top_text[i] == '+')
+        {
+            top_text[i] = ' ';
+        }
+    }
+    for(int i=0; i < strlen(bot_text); i++)
+    {
+        if(bot_text[i] == '+')
+        {
+            bot_text[i] = ' ';
+        }
+    }
+
+    //decode strings
+    CURL* curl = curl_easy_init();
+    char* escaped_pic_file = curl_easy_unescape(curl, pic_file, 0, NULL);
+    char* escaped_top_text = curl_easy_unescape(curl, top_text, 0, NULL);
+    char* escaped_bot_text = curl_easy_unescape(curl, bot_text, 0, NULL);
 
     // convert to string
-    std::string pic_file_s(pic_file);
-    std::string top_text_s(top_text);
-    std::string bot_text_s(bot_text);
+    std::string pic_file_s(escaped_pic_file);
+    std::string top_text_s(escaped_top_text);
+    std::string bot_text_s(escaped_bot_text);
+
+    curl_free(escaped_pic_file);
+    curl_free(escaped_top_text);
+    curl_free(escaped_bot_text);
+
+    curl_easy_cleanup(curl);
 
     // empty fields are bad
     std::string default_option = "Choose...";
@@ -283,16 +317,22 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
         
         content =
         "<style> \
-            body{position: relative; text-align: center; color: white; background-color: #283747;} \
-            div{color: white; font: 2em bold Impact, sans-serif; \
-                position: absolute; text-align: center;} \
-            #top{top:5%; left: 50%; transform: translate(-50%, -50%);} \
-            #bottom{top:95%; left: 50%; transform: translate(-50%, -50%); } \
+            body{position: relative; background-color: #283747;} \
+            .container{position: relative; width: 100%;          \
+                display:flex;justify-content:center;align-items:center; \
+                flex-direction: row; position: relative; \
+                color: white; font: 2em bold Impact, sans-serif; \
+                text-align:center; font-weight: bold; \
+            } \
+            #top{top:3%; left: 50%; transform: translate(-50%); position:absolute;} \
+            #bottom{bottom:3%; left: 50%; transform: translate(-50%); position:absolute} \
         </style> \
         <body> \
-            <img src=\"/static/" + result.temp + "\"> \
-            <div id=\"top\">" + result.top + "</div> \
-            <div id=\"bottom\">" + result.bottom + "</div> \
+            <div class=\"container\"> \
+                <img src=\"/static/" + result.temp + "\"> \
+                <div id=\"top\">" + result.top + "</div> \
+                <div id=\"bottom\">" + result.bottom + "</div> \
+            </div> \
         </body>";
     }
 }

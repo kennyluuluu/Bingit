@@ -2,6 +2,7 @@
 #include <string>
 #include "handler.h"
 #include <sqlite3.h>
+#include "curl/curl.h"
 
 using boost::asio::ip::tcp;
 
