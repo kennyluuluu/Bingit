@@ -83,6 +83,9 @@ target_link_libraries(status_handler_test server_lib handler_lib gtest_main ${Bo
 add_executable(proxy_handler_test tests/proxy_handler_test.cc)
 target_link_libraries(proxy_handler_test server_lib handler_lib config_parser gtest_main ${Boost_LIBRARIES})
 
+add_executable(meme_handler_test tests/meme_handler_test.cc)
+target_link_libraries(meme_handler_test server_lib handler_lib gtest_main ${Boost_LIBRARIES})
+
 # integration test
 # https://stackoverflow.com/questions/25627336/integrate-bash-test-scripts-in-cmake
 find_program(BASH_PROGRAM bash)
@@ -99,6 +102,7 @@ gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 gtest_discover_tests(handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(status_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(proxy_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(meme_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # generate coverage report
 include(cmake/CodeCoverageReportConfig.cmake)

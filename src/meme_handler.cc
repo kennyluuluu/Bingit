@@ -32,7 +32,7 @@ meme_handler::meme_handler(const NginxConfig &config, const std::string &server_
     else
     {
         //check if config_root is an absolute path
-        if(config_root[0] == '/')
+        if(config_root[0] == '/' || config_root.compare(".") == 0)
         {
             handler_root = config_root;
         }
@@ -90,7 +90,7 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     std::string path = handler_root;
     BOOST_LOG_TRIVIAL(info) << request.path;
 
-    if (request.path.compare("/meme/new") == 0 || request.path.compare("/meme/new") == 0)
+    if (request.path.compare("/meme/new") == 0 || request.path.compare("/meme/new/") == 0)
     {
         prepare_new_request(path, code, mime_type, content);
     }
