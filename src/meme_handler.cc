@@ -142,9 +142,9 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     {
         prepare_view_request(request.path, code, mime_type, content);
     }
-    else if (request.path.compare("/meme/list") == 0)
+    else if (request.path.find("/meme/list") == 0)
     {
-        prepare_list_request(request.body, code, mime_type, content);
+        prepare_list_request(request.path, code, mime_type, content);
     }
     
 
@@ -295,6 +295,8 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
         meme_handler::meme_count++;
         unique_id = std::to_string(meme_handler::meme_count);
         content = "<header>Meme " + unique_id + " Generated!</header><a href=\"/meme/view?id=" + unique_id + "\">Click here to see your meme</a>";
+        content += "<br><a href=\"/meme/new\">Click here to create another meme</a>";
+        content += "<br><a href=\"/meme/list\">Click here to look at all the memes</a>";
         
         std::string SQL = "INSERT INTO MEMES VALUES (" + unique_id + ", '"+pic_file_s+"', '" + top_text_s + "', '" + bot_text_s + "');";
         sqlite3_exec(db_, SQL.c_str(), NULL, NULL, &err );
@@ -305,6 +307,9 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
     {
         unique_id = edit_id_s;
         content = "<header>Meme " + unique_id + " Updated!</header><a href=\"/meme/view?id=" + unique_id + "\">Click here to see your meme</a>";
+        content += "<br><a href=\"/meme/new\">Click here to create another meme</a>";
+        content += "<br><a href=\"/meme/list\">Click here to look at all the memes</a>";
+
         std::string SQL = "UPDATE MEMES \
                            SET TEMPLATE = '" + pic_file_s + "', TOP = '" + top_text_s + "', BOTTOM = '" + bot_text_s + "'\
                            WHERE ID = " + unique_id + ";";
@@ -438,10 +443,42 @@ static int list_callback(void* arg, int numColumns, char** result, char** column
     return 0;
 }
 
-void meme_handler::prepare_list_request(const std::string body, short &code, std::string &mime_type, std::string &content)
+void meme_handler::prepare_list_request(const std::string path, short &code, std::string &mime_type, std::string &content)
 {
+    char search_query[sizeof(path)] = "";
+
+    std::string regex = location + "/list" + "?query=%[^&]";
+
+    sscanf(path.c_str(), regex.c_str(), search_query);
+
+    for(int i=0; i < strlen(search_query); i++)
+    {
+        if(search_query[i] == '+')
+            search_query[i] = ' ';
+    }
+
+    //decode strings
+    CURL* curl = curl_easy_init();
+    char* escaped_search_query = curl_easy_unescape(curl, search_query, 0, NULL);
+    // convert to string
+    std::string search_query_s(escaped_search_query);
+
+    curl_free(escaped_search_query);
+
+    curl_easy_cleanup(curl);
+
     id_lock.lock();
-    std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM, ID FROM MEMES;";
+    std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM, ID FROM MEMES";
+
+    if(search_query_s.compare("") == 0)
+    {
+        SQL += ";";
+    }
+    else
+    {
+        SQL += " WHERE TOP LIKE '%" + search_query_s + "%' OR BOTTOM LIKE '%" + search_query_s + "%';";
+    }
+
     char* err = NULL;
     std::vector<meme_row*> result;
     sqlite3_exec(db_, SQL.c_str(), list_callback, &result, &err );
@@ -460,12 +497,29 @@ void meme_handler::prepare_list_request(const std::string body, short &code, std
     BOOST_LOG_TRIVIAL(info) << "Found " << result.size() <<  " rows in db";
     code = 200;
     mime_type = "text/html";
-    std::string output_html = "<h1>List of All Memes</h1>";
+    std::string output_html = "<h1>List of All Memes</h1> \
+        <form method=\"get\"> \
+            <input type=\"text\" name=\"query\" > \
+            <input type=\"submit\" value=\"Search\"> \
+        </form> \
+    ";
     output_html += "<ul>";
+
     for (int i = 0; i < result.size(); i++)
     {
-        output_html += "<li><a href=/meme/view?id=" + result[i]->id + ">" + "/meme/view?id=" + result[i]->id + "</a></li>";
+        output_html += "<li><a href=/meme/view?id=" + result[i]->id + ">" + result[i]->id + " top: " + result[i]->top + " bot: " + result[i]->bottom + "</a></li>";
     }
+
     output_html += "</ul>";
+
+    if(result.size() == 0)
+    {
+        output_html += "<div>No memes with '" + search_query_s + "' in the top or bottom text</div>";
+    }
+
+    if(search_query_s.compare("") != 0)
+    {
+        output_html += "<a href=\"/meme/list\">Clear search</a>";
+    }
     content = output_html;
 }

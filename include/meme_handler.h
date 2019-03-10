@@ -33,7 +33,7 @@ class meme_handler : public handler
                                 short &code,
                                 std::string &mime_type,
                                 std::string &content);
-    void prepare_list_request(const std::string body,
+    void prepare_list_request(const std::string path,
                               short &code,
                               std::string &mime_type,
                               std::string &content);
