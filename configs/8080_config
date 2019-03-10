@@ -24,3 +24,7 @@ handler meme {
   root meme;
   view /view;
 }
+
+handler health {
+  location /health;
+}

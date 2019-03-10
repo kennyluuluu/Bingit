@@ -54,7 +54,7 @@ include_directories(include)
 # Add libraries
 add_library(server_lib src/server.cc src/session.cc src/config_parser.cc src/config_params.cc src/handler_manager.cc)
 add_library(config_parser src/config_parser.cc)
-add_library(handler_lib src/echo_handler.cc src/static_handler.cc src/bad_request_handler.cc src/status_handler src/reply.cc src/request.cc src/proxy_handler.cc src/meme_handler.cc)
+add_library(handler_lib src/echo_handler.cc src/static_handler.cc src/bad_request_handler.cc src/status_handler src/reply.cc src/request.cc src/proxy_handler.cc src/meme_handler.cc src/health_handler.cc)
 target_link_libraries(handler_lib ${CURL_LIBRARIES})
 
 # Add executable and link libraries

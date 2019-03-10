@@ -50,7 +50,7 @@ do
 done
 
 
-expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 583\r\nContent-Type: text/plain\r\n\r\n\
+expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 637\r\nContent-Type: text/plain\r\n\r\n\
 Total Number of Requests Received: 36\n\n\
 Number of requests received for /echo/: 16\n\
 Number of requests received for /static/doesnt_exist.html: 7\n\
@@ -59,6 +59,7 @@ Number of requests received for /static2/index.html: 3\n\n\
 Number of 200 responses sent: 29\n\
 Number of 404 responses sent: 7\n\n\
 A echo request handler exists for the path: /echo\n\
+A health request handler exists for the path: /health\n\
 A meme request handler exists for the path: /meme\n\
 A static request handler exists for the path: /static\n\
 A static request handler exists for the path: /static2\n\
