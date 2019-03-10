@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/bind.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <mutex>
 #include <sqlite3.h>
 #include <vector>
@@ -16,6 +17,41 @@ struct meme_row {
     std::string id;
     bool data_found;
 };
+
+static int view_callback(void* arg, int numColumns, char** result, char** columnNames)
+{
+    meme_row* mrp = (meme_row*) arg;
+    BOOST_LOG_TRIVIAL(info) << "Found matching row in db";
+
+    bool foundData = false;
+
+    for (int i=0; i< numColumns; i++){
+        BOOST_LOG_TRIVIAL(info) << columnNames[i] << " " << result[i];
+        std::string column = columnNames[i];
+        std::string val = result[i];
+        if(column.compare("TEMPLATE") == 0)
+        {
+            mrp->temp = val;
+            foundData = true;
+        }
+        else if(column.compare("TOP") == 0)
+        {
+            mrp->top = val;
+            foundData = true;
+        }
+        else if(column.compare("BOTTOM") == 0)
+        {
+            mrp->bottom = val;
+            foundData = true;
+        }
+        else
+        {
+            BOOST_LOG_TRIVIAL(info) << "Unexpected column/value " << column << " " << val;
+        }
+    }
+    mrp->data_found = foundData; 
+    return 0;
+}
 
 int meme_handler::meme_count = 0;
 
@@ -77,8 +113,6 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     std::unordered_map<std::string, std::string> headers;
     std::string content = "404 Error: Page not found";
 
-    //std::string request_path_without_location = "";
-
     // if the request path is not found at the beginning
     if(request.path.find(location) != 0)
     {
@@ -88,13 +122,19 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     }
     
     std::string path = handler_root;
-    BOOST_LOG_TRIVIAL(info) << request.path;
+    BOOST_LOG_TRIVIAL(info) << "Request Path: " << request.path;
 
-    if (request.path.compare("/meme/new") == 0 || request.path.compare("/meme/new/") == 0)
+    if (request.path.compare("/meme/new") == 0)
     {
         prepare_new_request(path, code, mime_type, content);
     }
-    else if (request.path.compare("/meme/create") == 0 || request.path.compare("/meme/create/") == 0)
+    else if (request.path.find("/meme/edit?update=") == 0)
+    {
+        // https://stackoverflow.com/questions/28163723/c-how-to-get-substring-after-a-character
+        std::string id_param = request.path.substr(request.path.find("?update=") + 8);
+        prepare_edit_request(path, code, mime_type, content, id_param);
+    }
+    else if (request.path.compare("/meme/create") == 0)
     {
         prepare_create_request(request.body, code, mime_type, content);
     }
@@ -102,7 +142,7 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     {
         prepare_view_request(request.path, code, mime_type, content);
     }
-    else if (request.path.compare("/meme/list") == 0 || request.path.compare("/meme/list/") == 0)
+    else if (request.path.compare("/meme/list") == 0)
     {
         prepare_list_request(request.body, code, mime_type, content);
     }
@@ -122,13 +162,6 @@ void meme_handler::prepare_new_request(std::string &path,
     // show form to create new meme
     path = path + "/new.html";
     boost::filesystem::path path_object(path);
-
-    // std::string extension = "";
-    // if (path_object.has_extension())
-    // {
-    //     extension = path_object.extension().string();
-    // }
-
     std::ifstream static_file(path.c_str());
 
     if (boost::filesystem::is_regular_file(path_object) && static_file.good())
@@ -141,45 +174,89 @@ void meme_handler::prepare_new_request(std::string &path,
         content = buffer.str();
     }
 }
-
-static int create_callback(void* arg, int numColumns, char** result, char** columnNames)
+ 
+void meme_handler::prepare_edit_request(std::string &path,
+                                        short &code,
+                                        std::string &mime_type,
+                                        std::string &content,
+                                        const std::string &meme_id)
 {
-    return 0;
-}
+    id_lock.lock();
+    std::string SQL = "SELECT TEMPLATE, TOP, BOTTOM from MEMES where ID='" + meme_id + "';";
+    char* err = NULL;
+    meme_row result;
+    result.data_found = false;
+    sqlite3_exec(db_, SQL.c_str(), view_callback, &result, &err );
+    id_lock.unlock();
 
+    if (err!=NULL || !result.data_found)
+    {
+        if (err!=NULL)
+        {
+            BOOST_LOG_TRIVIAL(info) << err;
+            sqlite3_free(err);
+        }
+        code = 404;
+        mime_type = "text/html";
+        content = "<header>Meme " + meme_id + " not found :(</header>";
+        return;
+    }
+
+    path = path + "/edit.html";
+    boost::filesystem::path path_object(path);
+    std::ifstream static_file(path.c_str());
+
+    if (boost::filesystem::is_regular_file(path_object) && static_file.good())
+    {
+        code = 200;
+        mime_type = "text/html";
+        std::stringstream buffer;
+        buffer << static_file.rdbuf();
+        content = buffer.str();
+        
+        //https://stackoverflow.com/questions/4643512/replace-substring-with-another-substring-c
+        boost::replace_all(content, "$meme.top", result.top);
+        boost::replace_all(content, "$meme.bot", result.bottom);
+        boost::replace_all(content, "$meme.id", meme_id);
+    }
+}
 
 void meme_handler::prepare_create_request(const std::string body, short &code, std::string &mime_type, std::string &content)
 {
     // process form input about new meme
-    BOOST_LOG_TRIVIAL(info) << body;
+    BOOST_LOG_TRIVIAL(info) << "Received Create Request with inputs: " << body;
 
     // referenced https://stackoverflow.com/questions/9899440/parsing-html-form-data
     char pic_file[sizeof(body)] = "";
     char top_text[sizeof(body)] = "";
     char bot_text[sizeof(body)] = "";
+    char edit_id[sizeof(body)] = "";
 
-    sscanf(body.c_str(), "image=%[^&]&top=%[^&]&bottom=%[^&]", pic_file, top_text, bot_text);
+    // No edit paramters found
+    if (body.find("&update=") == std::string::npos)
+    {
+        sscanf(body.c_str(), "image=%[^&]&top=%[^&]&bottom=%[^&]", pic_file, top_text, bot_text);
+    }
+    // Edit Parameter Found
+    else
+    {
+        sscanf(body.c_str(), "image=%[^&]&top=%[^&]&bottom=%[^&]&update=%[^&]", pic_file, top_text, bot_text, edit_id);
+    }
     
     for(int i=0; i < strlen(pic_file); i++)
     {
         if(pic_file[i] == '+')
-        {
             pic_file[i] = ' ';
-        }
     }
     for(int i=0; i < strlen(top_text); i++)
     {
         if(top_text[i] == '+')
-        {
             top_text[i] = ' ';
-        }
     }
     for(int i=0; i < strlen(bot_text); i++)
     {
         if(bot_text[i] == '+')
-        {
             bot_text[i] = ' ';
-        }
     }
 
     //decode strings
@@ -192,6 +269,7 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
     std::string pic_file_s(escaped_pic_file);
     std::string top_text_s(escaped_top_text);
     std::string bot_text_s(escaped_bot_text);
+    std::string edit_id_s(edit_id);
 
     curl_free(escaped_pic_file);
     curl_free(escaped_top_text);
@@ -206,65 +284,46 @@ void meme_handler::prepare_create_request(const std::string body, short &code, s
         code = 400;
         mime_type = "text/plain";
         content = "400 Error: Bad Request";
+        return;
     }
-    else 
+
+    char* err = NULL;
+    // No Edit Parameters Found
+    if (edit_id_s.empty())
     {
         id_lock.lock();
         meme_handler::meme_count++;
-        unique_id = meme_handler::meme_count;
-        content = "<header>Meme " + std::to_string(meme_handler::meme_count) + " Generated!</header><a href=\"/meme/view?id=" + std::to_string(meme_handler::meme_count) + "\">Click here to see your meme</a>";
+        unique_id = std::to_string(meme_handler::meme_count);
+        content = "<header>Meme " + unique_id + " Generated!</header><a href=\"/meme/view?id=" + unique_id + "\">Click here to see your meme</a>";
         
-        std::string SQL = "INSERT INTO MEMES VALUES (" + std::to_string(meme_handler::meme_count) + ", '"+pic_file_s+"', '" + top_text_s + "', '" + bot_text_s + "');";
-        char* err = NULL;
-        sqlite3_exec(db_, SQL.c_str(), create_callback, NULL, &err );
-        if (err!=NULL)
-        {
-            BOOST_LOG_TRIVIAL(info) << err;
-            sqlite3_free(err); 
-            code = 404;
-            mime_type = "text/html";
-            content = "<header>Couldn't create meme :( Try again later</header>";
-            return;
-        }
+        std::string SQL = "INSERT INTO MEMES VALUES (" + unique_id + ", '"+pic_file_s+"', '" + top_text_s + "', '" + bot_text_s + "');";
+        sqlite3_exec(db_, SQL.c_str(), NULL, NULL, &err );
         id_lock.unlock();
-        code = 200;
+    }
+    // Edit Parameter Detected
+    else
+    {
+        unique_id = edit_id_s;
+        content = "<header>Meme " + unique_id + " Updated!</header><a href=\"/meme/view?id=" + unique_id + "\">Click here to see your meme</a>";
+        std::string SQL = "UPDATE MEMES \
+                           SET TEMPLATE = '" + pic_file_s + "', TOP = '" + top_text_s + "', BOTTOM = '" + bot_text_s + "'\
+                           WHERE ID = " + unique_id + ";";
+        id_lock.lock();
+        sqlite3_exec(db_, SQL.c_str(), NULL, NULL, &err );
+        id_lock.unlock();
+    }
+
+    if (err!=NULL)
+    {
+        BOOST_LOG_TRIVIAL(info) << err;
+        sqlite3_free(err); 
+        code = 404;
         mime_type = "text/html";
+        content = "<header>Couldn't create meme :( Try again later</header>";
+        return;
     }
-}
-
-static int view_callback(void* arg, int numColumns, char** result, char** columnNames)
-{
-    meme_row* mrp = (meme_row*) arg;
-    BOOST_LOG_TRIVIAL(info) << "Found matching row in db";
-
-    bool foundData = false;
-
-    for (int i=0; i< numColumns; i++){
-        BOOST_LOG_TRIVIAL(info) << columnNames[i] << " " << result[i];
-        std::string column = columnNames[i];
-        std::string val = result[i];
-        if(column.compare("TEMPLATE") == 0)
-        {
-            mrp->temp = val;
-            foundData = true;
-        }
-        else if(column.compare("TOP") == 0)
-        {
-            mrp->top = val;
-            foundData = true;
-        }
-        else if(column.compare("BOTTOM") == 0)
-        {
-            mrp->bottom = val;
-            foundData = true;
-        }
-        else
-        {
-            BOOST_LOG_TRIVIAL(info) << "Unexpected column/value " << column << " " << val;
-        }
-    }
-    mrp->data_found = foundData; 
-    return 0;
+    code = 200;
+    mime_type = "text/html";
 }
 
 void meme_handler::prepare_view_request(const std::string path, short &code, std::string &mime_type, std::string &content)
@@ -314,7 +373,6 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
         code = 200;
         mime_type = "text/html";
 
-        
         content =
         "<style> \
             body{position: relative; background-color: #283747;} \
@@ -326,6 +384,7 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
             } \
             #top{top:3%; left: 50%; transform: translate(-50%); position:absolute;} \
             #bottom{bottom:3%; left: 50%; transform: translate(-50%); position:absolute} \
+            a{left: 50%; transform: translate(-50%); position:absolute; font: 2em bold Impact, sans-serif;} \
         </style> \
         <body> \
             <div class=\"container\"> \
@@ -333,6 +392,7 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
                 <div id=\"top\">" + result.top + "</div> \
                 <div id=\"bottom\">" + result.bottom + "</div> \
             </div> \
+            <br><a href=\"/meme/edit?update=" + meme_id_s + "\">Edit This Meme</a> \
         </body>";
     }
 }
@@ -386,15 +446,17 @@ void meme_handler::prepare_list_request(const std::string body, short &code, std
     std::vector<meme_row*> result;
     sqlite3_exec(db_, SQL.c_str(), list_callback, &result, &err );
     id_lock.unlock();
+
     if (err!=NULL)
-        {
-            BOOST_LOG_TRIVIAL(info) << err;
-            sqlite3_free(err); 
-            code = 404;
-            mime_type = "text/html";
-            content = "<header>No memes found :(</header>";
-            return;
-        }
+    {
+        BOOST_LOG_TRIVIAL(info) << err;
+        sqlite3_free(err); 
+        code = 404;
+        mime_type = "text/html";
+        content = "<header>No memes found :(</header>";
+        return;
+    }
+
     BOOST_LOG_TRIVIAL(info) << "Found " << result.size() <<  " rows in db";
     code = 200;
     mime_type = "text/html";

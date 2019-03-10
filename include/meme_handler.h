@@ -20,6 +20,11 @@ class meme_handler : public handler
                     short &code, 
                     std::string &mime_type, 
                     std::string &content);
+    void prepare_edit_request(std::string &path,
+                              short &code,
+                              std::string &mime_type,
+                              std::string &content,
+                              const std::string &meme_id);
     void prepare_create_request(const std::string body,
                                 short &code,
                                 std::string &mime_type,
