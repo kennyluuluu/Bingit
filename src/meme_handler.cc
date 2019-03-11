@@ -404,6 +404,7 @@ void meme_handler::prepare_view_request(const std::string path, short &code, std
                 <div id=\"bottom\">" + result.bottom + "</div> \
             </div> \
             <br><a href=\"/meme/edit?update=" + meme_id_s + "\">Edit This Meme</a> \
+            <br><a href=\"/meme/delete?id=" + meme_id_s + "\" onclick=\"return confirm(\'Are you sure?\')\">Delete This Meme</a> \
         </body>";
     }
 }
