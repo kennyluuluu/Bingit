@@ -248,8 +248,8 @@ void session::handle_read(const boost::system::error_code &error,
         BOOST_LOG_TRIVIAL(info) << "Sending " << response.get()->code << " response";
         
         // computer readable logging
-        BOOST_LOG_TRIVIAL(info) << "::ResponseMetrics::" << response.get()->code << "#"
-        << req.path << "#" << remote_ip << "#" << name;
+        BOOST_LOG_TRIVIAL(info) << "::ResponseMetrics::response_code:" << response.get()->code << "#path:"
+        << req.path << "#ip:" << remote_ip << "#handler:" << name;
 
         // writes response
         mtx.lock();
