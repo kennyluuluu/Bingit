@@ -1,0 +1,45 @@
+HTTP/1.1 200 OK
+Content-Length: 913
+Content-Type: text/html
+
+<style>
+body {
+    background-color: #283747;
+    color: white;
+    font-family: Impact;
+    text-align: center;
+}
+h1 {
+    font-size: 100px;
+}
+form {
+    font-size:30px;
+}
+select {
+    height:30px;
+    width:280px;
+}
+input {
+    height:35px;
+    width:280px;
+}
+</style>
+
+<body>
+    <h1>Meme<br>Generator</h1>
+    <form action="/meme/create" method="post">
+        Meme Template:<br>
+        <select name="image">
+            <option>Choose...</option>
+            <option value="simply.jpg">One Does Not Simply</option>
+            <option value="grumpy.jpg">Grumpy Cat</option>
+            <option value="pikachu.jpg">Surprised Pikachu</option>
+        </select>
+        <br><br>
+        Top Text:<br>
+        <input type="text" name="top"><br><br>
+        Bottom Text:<br>
+        <input type="text" name="bottom"><br><br>
+        <input type="submit" style="width:100px;" value="Generate">
+    </form>
+</body>

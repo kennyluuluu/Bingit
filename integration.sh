@@ -3,7 +3,7 @@ echo "======================================="
 echo "Integration tests start"
 
 # start webserver
-./bin/server ../configs/8080_config & 
+./bin/server ../configs/8080_config > /dev/null & 
 id=$!
 
 sleep 1
@@ -54,8 +54,6 @@ else
     echo -e "Bad Path Test Passed\n"
 fi
 
-echo test
-expected=$'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 26\r\n\r\nGET /echo/test HTTP/1.1\r\n'
 expected=$(echo -e "HTTP/1.1 200 OK\r\nContent-Length: 26\r\nContent-Type: text/plain\r\n\r\nGET /echo/test HTTP/1.1\r\n")
 
 generated_output=$(echo -e 'GET /echo/test HTTP/1.1\r\n' | nc localhost 8080 -w1 )
@@ -71,6 +69,113 @@ then
     exit 1
 else
     echo -e "Echo Test Passed\n"
+fi
+
+expected=$(cat ../integration/new_meme_response)
+
+generated_output=$(echo -e "GET /meme/new HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1 )
+
+echo -e "\n\nINTEGRATION: running new meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "New Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "New Meme Test Passed\n"
+fi
+
+#create memes
+echo -e "GET /meme/create HTTP/1.1\r\n\r\nimage=a&top=b&bottom=space+test" | nc localhost 8080 -w1 
+echo -e "GET /meme/create HTTP/1.1\r\n\r\nimage=a&top=b&bottom=space+test" | nc localhost 8080 -w1 
+echo -e "GET /meme/create HTTP/1.1\r\n\r\nimage=b&top=different&bottom=%20space" | nc localhost 8080 -w1 
+
+#list memes
+expected=$(cat ../integration/list_meme_response)
+generated_output=$(echo -e "GET /meme/list HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1 )
+
+echo -e "\n\nINTEGRATION: running create and list meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "Create and List Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "Create and List Test Passed\n"
+fi
+
+#search memes
+expected=$(cat ../integration/search_meme_response)
+generated_output=$(echo -e "GET /meme/list?query=differ HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1 )
+
+echo -e "\n\nINTEGRATION: running search meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "Search Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "Search Meme Test Passed\n"
+fi
+
+#view meme
+expected=$(cat ../integration/view_meme_response)
+generated_output=$(echo -e "GET /meme/view?id=2 HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1 )
+
+echo -e "\n\nINTEGRATION: running view meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "View Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "View Meme Test Passed\n"
+fi
+
+#edit a meme
+echo -e "GET /meme/create HTTP/1.1\r\n\r\nimage=test.jpg&top=new+text&bottom=wowzer+dood&update=1" | nc localhost 8080 -w1
+
+#view the edited meme
+expected=$(cat ../integration/edit_meme_response)
+generated_output=$(echo -e "GET /meme/view?id=1 HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1)
+
+echo -e "\n\nINTEGRATION: running edit meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "Edit Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "Edit Meme Test Passed\n"
+fi
+
+#delete a meme
+echo -e "GET /meme/delete?id=2 HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1
+
+#list the remaining memes
+expected=$(cat ../integration/list_after_delete_meme_response)
+generated_output=$(echo -e "GET /meme/list HTTP/1.1\r\n\r\n" | nc localhost 8080 -w1 )
+
+echo -e "\n\nINTEGRATION: running delete and list meme test\n"
+if [ "$expected" != "$generated_output" ]; 
+then
+    echo "${expected}"
+    echo "${generated_output}"
+    echo -e "Delete and List Meme Test Failed\n"
+    kill -s SIGINT $id
+    exit 1
+else
+    echo -e "Delete and List Meme Test Passed\n"
 fi
 
 echo "All integration Tests Passed"

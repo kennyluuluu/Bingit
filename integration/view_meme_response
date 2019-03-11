@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Content-Length: 975
+Content-Type: text/html
+
+<style>             body{position: relative; background-color: #283747;}             .container{position: relative; width: 100%;                          display:flex;justify-content:center;align-items:center;                 flex-direction: row; position: relative;                 color: white; font: 2em bold Impact, sans-serif;                 text-align:center; font-weight: bold;             }             #top{top:3%; left: 50%; transform: translate(-50%); position:absolute;}             #bottom{bottom:3%; left: 50%; transform: translate(-50%); position:absolute}             a{left: 50%; transform: translate(-50%); position:absolute; font: 2em bold Impact, sans-serif;}         </style>         <body>             <div class="container">                 <img src="/static/a">                 <div id="top">b</div>                 <div id="bottom">space test
+</div>             </div>             <br><a href="/meme/edit?update=2">Edit This Meme</a>         </body>

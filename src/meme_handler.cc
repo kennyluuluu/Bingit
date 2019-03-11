@@ -534,7 +534,7 @@ void meme_handler::prepare_delete_request(short &code, std::string &mime_type, s
 {
     BOOST_LOG_TRIVIAL(info) << "Delete handler with id " << meme_id << "\n";
     id_lock.lock();
-    std::string SQL = "DELETE FROM MEMES WHERE ID=" + meme_id + ";";
+std::string SQL = "DELETE FROM MEMES WHERE ID='" + meme_id + "';";
     char* err = NULL;
     sqlite3_exec(db_, SQL.c_str(), NULL, NULL, &err );
     id_lock.unlock();

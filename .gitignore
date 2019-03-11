@@ -6,3 +6,4 @@ mirror
 tests/server_log*
 .idea/
 cmake-build-debug/
+integration/server_log*

@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Content-Length: 369
+Content-Type: text/html
+
+<h1>List of All Memes</h1>         <form method="get">             <input type="text" name="query" >             <input type="submit" value="Search">         </form>     <ul><li><a href=/meme/view?id=1>1 top: b bot: space test
+</a></li><li><a href=/meme/view?id=2>2 top: b bot: space test
+</a></li><li><a href=/meme/view?id=3>3 top: different bot:  space
+</a></li></ul>

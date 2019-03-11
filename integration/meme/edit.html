@@ -1,0 +1,42 @@
+<style>
+body { 
+    background-color: #283747;
+    color: white;
+    font-family: Impact;
+    text-align: center;
+}
+
+h1 {
+    font-size: 60px;
+}
+
+select {
+    height: 30px;
+    width: 280px;
+}
+
+input {
+    height: 35px;
+    width: 280px;
+}
+</style>
+
+<body>
+    <h1>Editing Meme $meme.id</h1>
+    <form action="/meme/create" method="post">
+        Meme Template:<br>
+        <select name="image">
+            <option>Choose...</option>
+            <option value="simply.jpg">One Does Not Simply</option>
+            <option value="grumpy.jpg">Grumpy Cat</option>
+            <option value="pikachu.jpg">Surprised Pikachu</option>
+        </select>
+        <br><br>
+        Top Text:<br>
+        <input type="text" name="top" value="$meme.top"><br><br>
+        Bottom Text:<br>
+        <input type="text" name="bottom" value="$meme.bot"><br><br>
+        <input type="hidden" name="update" value="$meme.id">
+        <input type="submit" style="width: 100px;" value="Update">
+    </form>
+</body>
