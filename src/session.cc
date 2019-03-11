@@ -216,6 +216,7 @@ void session::handle_read(const boost::system::error_code &error,
                                                                         params_.server_root);
             mtx.unlock();
             response = handler_->HandleRequest(req);
+
         }
         else
         {
@@ -245,6 +246,10 @@ void session::handle_read(const boost::system::error_code &error,
         const char *http_response_buf = http_response.c_str();
         size_t response_len = http_response.size();
         BOOST_LOG_TRIVIAL(info) << "Sending " << response.get()->code << " response";
+        
+        // computer readable logging
+        BOOST_LOG_TRIVIAL(info) << "::ResponseMetrics::" << response.get()->code << "#"
+        << req.path << "#" << remote_ip << "#" << name;
 
         // writes response
         mtx.lock();
