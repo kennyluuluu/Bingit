@@ -23,13 +23,15 @@ else
 fi
 
 # invalid request test
-expected=$(echo -e "HTTP/1.1 404 Not Found\r\nContent-Length: 25\r\nContent-Type: text/plain\r\n\r\n404 Error: File Not Found\\n")
+expected=$(echo -e "HTTP/1.1 400 Bad Request\r\nContent-Length: 15\r\nContent-Type: text/plain\r\n\r\n400 Bad Request\\n")
 
 generated_output=$(echo -e 'GE / HTTP/1.1\r\n' | nc localhost 8080 -w1)
  
 echo -e "\n\nINTEGRATION: running invalid request test\n"
 if [ "$expected" != "$generated_output" ]; 
 then
+    echo "${expected}"
+    echo "${generated_output}"
     echo -e "Invalid Request Test Failed\n"
     kill -s SIGINT $id
     exit 1

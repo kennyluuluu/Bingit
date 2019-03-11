@@ -105,11 +105,6 @@ request parse_request_line(const char *request_line, std::string ip)
         return invalid_request;
     }
 
-    if(path.size() == 0)
-    {
-        return invalid_request;
-    }
-
     bool has_carriage_line_feed = false;
     while (strlen(request_line) > 1)
     {
@@ -126,7 +121,7 @@ request parse_request_line(const char *request_line, std::string ip)
     if (!has_carriage_line_feed)
     {
         BOOST_LOG_TRIVIAL(info) << "HTTP Request without CRLF after HTTP version received from " << ip;
-	return invalid_request;
+	    return invalid_request;
     }
 
     //the request line must end in a \r\n and the http_version must be valid
@@ -176,6 +171,7 @@ void session::handle_read(const boost::system::error_code &error,
         std::string name = "";
         NginxConfig config;
         int i = 0;
+        std::unique_ptr<reply> response;
         // make copy of data_ up to bytes_transferred
         char data_copy[bytes_transferred+1];
         while (i < bytes_transferred)
@@ -210,19 +206,21 @@ void session::handle_read(const boost::system::error_code &error,
                     break;
                 }
             }
+            if(name.compare("") == 0)
+            {
+                BOOST_LOG_TRIVIAL(info) << "No valid handler found for path, using bad request handler instead";
+            }
+            mtx.lock();
+            std::unique_ptr<handler> handler_ = manager_->createByName(name,
+                                                                        config,
+                                                                        params_.server_root);
+            mtx.unlock();
+            response = handler_->HandleRequest(req);
         }
-
-        if(name.compare("") == 0)
+        else
         {
-            BOOST_LOG_TRIVIAL(info) << "No valid handler found for path, using bad request handler instead";
+            response = make_400_request();
         }
-        mtx.lock();
-        std::unique_ptr<handler> handler_ = manager_->createByName(name,
-                                                                    config,
-                                                                    params_.server_root);
-        mtx.unlock();
-        std::unique_ptr<reply> response = handler_->HandleRequest(req);
-
         mtx.lock();
         // update url counter
         std::map<std::string, int>::const_iterator url_iter = manager_->url_counter.find(req.path);
@@ -283,4 +281,19 @@ std::string session::get_remote_ip()
     boost::asio::ip::tcp::endpoint remote_ep = socket_.remote_endpoint();
     boost::asio::ip::address remote_ad = remote_ep.address();
     return remote_ad.to_string();
+}
+
+std::unique_ptr<reply> make_400_request()
+{
+  short code = 400;
+  std::string mime_type = "text/plain";
+  std::unordered_map<std::string, std::string> headers;
+  std::string content = "400 Bad Request";
+
+  headers["Content-Type"] = mime_type;
+  headers["Content-Length"] = std::to_string(content.size());
+
+  reply result = reply("HTTP/1.1", code, mime_type, content, headers);
+
+  return std::make_unique<reply>(result);
 }
