@@ -37,6 +37,10 @@ class meme_handler : public handler
                               short &code,
                               std::string &mime_type,
                               std::string &content);
+    void prepare_delete_request(short &code,
+                              std::string &mime_type,
+                              std::string &content,
+                              const std::string &meme_id);
     std::string handler_root;
     std::string location;
     std::string view_path;

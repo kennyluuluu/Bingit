@@ -146,6 +146,12 @@ std::unique_ptr<reply> meme_handler::HandleRequest(const request& request)
     {
         prepare_list_request(request.path, code, mime_type, content);
     }
+    else if (request.path.find("/meme/delete?id=") == 0)
+    {
+        // https://stackoverflow.com/questions/28163723/c-how-to-get-substring-after-a-character
+        std::string id_param = request.path.substr(request.path.find("?id=") + 4);
+        prepare_delete_request(code, mime_type, content, id_param);
+    }
     
 
     headers["Content-Type"] = mime_type;
@@ -522,4 +528,35 @@ void meme_handler::prepare_list_request(const std::string path, short &code, std
         output_html += "<a href=\"/meme/list\">Clear search</a>";
     }
     content = output_html;
+}
+
+void meme_handler::prepare_delete_request(short &code, std::string &mime_type, std::string &content, const std::string &meme_id)
+{
+    BOOST_LOG_TRIVIAL(info) << "Delete handler with id " << meme_id << "\n";
+    id_lock.lock();
+    std::string SQL = "DELETE FROM MEMES WHERE ID=" + meme_id + ";";
+    char* err = NULL;
+    sqlite3_exec(db_, SQL.c_str(), NULL, NULL, &err );
+    id_lock.unlock();
+
+
+    if (err!=NULL)
+    {
+        BOOST_LOG_TRIVIAL(info) << err;
+        sqlite3_free(err); 
+        code = 404;
+        mime_type = "text/html";
+        content = "<header>No Meme with id = " + meme_id + "found :(</header>";
+        return;
+    }
+
+    BOOST_LOG_TRIVIAL(info) << "Successfully deleted meme with id = " << meme_id << "\n";
+    code = 200;
+    mime_type = "text/html";
+    content = "<div>Meme with id " + meme_id + " has been deleted </div>";
+    content += "<br><a href=\"/meme/new\">Click here to create another meme</a>";
+    content += "<br><a href=\"/meme/list\">Click here to look at all the memes</a>";
+
+
+
 }
